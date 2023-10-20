@@ -14,83 +14,12 @@ from scipy import interpolate
 # local requirements
 from libs.matrix_utilities import *
 from libs.print_utilities import *
-
+from libs.plot_utilities import *
+from libs.exceptions import *
 
 # set the starting point
 st_lat = 44.933
 st_lon = 12.159
-
-#########################################################
-#
-# get_3x3_centered_on function
-#
-#########################################################
-
-def get_3x3_centered_on(ds, lat_idx, lon_idx):
-    """Extract a 3x3 matrix centered on the given indices."""
-    return ds.bathy.isel(lat=slice(lat_idx-1, lat_idx+2), lon=slice(lon_idx-1, lon_idx+2))
-
-
-#########################################################
-#
-# get_matrix_centered_on function
-#
-#########################################################
-
-def get_matrix_centered_on(ds, lat_idx, lon_idx, size):
-    """Extract a size x size matrix centered on the given indices."""
-    
-    # check if size is odd. Cannot be even
-    if (size % 2 == 0):
-        raise Exception("matrix size cannot be even!")
-    halfsize = size // 2
-    
-    # extract a matrix with the bathymetry and the corresponding matrix of indices
-    matrix = ds.bathy.isel(lat=slice(lat_idx-halfsize, lat_idx+halfsize+1), lon=slice(lon_idx-halfsize, lon_idx+halfsize+1))
-    matrix_ind = [(l1, l2) for l1 in range(lat_idx-halfsize, lat_idx+halfsize+1) for l2 in range(lon_idx-halfsize, lon_idx+halfsize+1)]
-    lats_ind = range(lat_idx-halfsize, lat_idx+halfsize+1)
-    lons_ind = range(lon_idx-halfsize, lon_idx+halfsize+1)
-
-    # return the matrix and two arrays (lat and lon)
-    return matrix, lats_ind, lons_ind
-
-
-#########################################################
-#
-# get_min_index function
-#
-#########################################################
-
-def get_min_index(matrix):
-    """Return the index of the minimum bathymetry in the matrix."""
-    
-    # get the minimum
-    try:
-        coords = np.unravel_index(np.nanargmax(matrix), matrix.shape)
-    except ValueError:
-        return None, None, None
-
-    # check if nan
-    if np.isnan(matrix[coords]):
-        return coords, None
-    
-    print("[get_min_index] === Returning %s, %s" % (coords, matrix[coords].values))
-    return coords, matrix[coords].values
-
-
-#########################################################
-#
-# get_depth function
-#
-#########################################################
-
-def get_depth(ds, latlon_idx):
-    
-    depth = float(ds.bathy.isel(lat=latlon_idx[0], lon=latlon_idx[1]).values)
-    if np.isnan(depth):
-        return np.nan
-    else:
-        return np.round(depth, 2)
 
 
 #########################################################
@@ -193,16 +122,16 @@ if __name__ == "__main__":
         if iterat == 10:
             break
         
-    # #######################################################################
-    # #
-    # # RECAP
-    # #
-    # #######################################################################
+    #######################################################################
+    #
+    # RECAP
+    #
+    #######################################################################
     
-    # print("---------------------------------------")
-    # print("Our thalweg is:")
-    # for p in range(len(thalweg)):
-    #     print("%s) - %s [%s]" % (p, thalweg[p], thalweg_depth[p]))
+    print(colored("__main__", "blue", attrs=["bold"]) + " ------------------------------------------")
+    print(colored("__main__", "blue", attrs=["bold"]) + " --- Our thalweg is:")
+    for p in range(len(thalweg)):
+        print("%s) - %s [%s]" % (p, thalweg[p], thalweg_depth[p]))
 
     # #######################################################################
     # #

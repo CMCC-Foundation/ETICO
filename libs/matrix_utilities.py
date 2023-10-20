@@ -270,7 +270,122 @@ def find_next_through_zonal_direction(matrix, coords, lon_idx, lat_idx):
     print(colored("libs::matrix_utilities::find_next_through_zonal_direction", "blue", attrs=["bold"]) + " --- Returning %s, %s" % (max_value, max_coords))
     return max_value, max_coords
             
+    
+#########################################################
+#
+# get_min_index function
+#
+#########################################################
 
+def get_min_index(matrix):
+
+    """Return the index of the minimum bathymetry in the matrix.
+
+    Parameters
+    ----------
+    matrix: np.matrix
+        The 3x3 matrix where to look for the maximum
+
+    Returns
+    -------
+    list
+        a [lat,lon] structure with coordinates of the min element
+    float
+        the depth value for that point
+    """
+        
+    # get the minimum
+    try:
+        coords = np.unravel_index(np.nanargmax(matrix), matrix.shape)
+    except ValueError:
+        return None, None, None
+
+    # check if nan
+    if np.isnan(matrix[coords]):
+        return coords, None
     
+    print("[get_min_index] === Returning %s, %s" % (coords, matrix[coords].values))
+    return coords, matrix[coords].values
+
+
+#########################################################
+#
+# get_depth function
+#
+#########################################################
+
+def get_depth(ds, latlon_idx):
+ 
+    """Return the index of the minimum bathymetry in the matrix.
+
+    Parameters
+    ----------
+    ds: np.matrix
+        The matrix where to look for the maximum
+    latlon_idx: list
+        A [lat,lon] structure
+
+    Returns
+    -------
+    float
+        the depth value for that point
+    """
+           
+    depth = float(ds.bathy.isel(lat=latlon_idx[0], lon=latlon_idx[1]).values)
+    if np.isnan(depth):
+        return np.nan
+    else:
+        return np.round(depth, 2)
     
+
+#########################################################
+#
+# get_3x3_centered_on function
+#
+#########################################################
+
+def get_3x3_centered_on(ds, lat_idx, lon_idx):
+    """Extract a 3x3 matrix centered on the given indices."""
+    return ds.bathy.isel(lat=slice(lat_idx-1, lat_idx+2), lon=slice(lon_idx-1, lon_idx+2))
+
+
+#########################################################
+#
+# get_matrix_centered_on function
+#
+#########################################################
+
+def get_matrix_centered_on(ds, lat_idx, lon_idx, size):
+  
+    """Extract a size x size matrix centered on the given indices.
+
+    Parameters
+    ----------
+    ds: np.matrix
+        The original matrix
+    lat_idx: int
+        The latitude index of the center for the new matrix
+    lon_idx: int
+        The longitude index of the center for the new matrix
+    size: int
+        The size of the matrix (must be odd)
+        
+    Returns
+    -------
+    np.matrix
+        the extracted submatrix
+    """
     
+    # check if size is odd. Cannot be even
+    if (size % 2 == 0):
+        raise Exception("matrix size cannot be even!")
+    halfsize = size // 2
+    
+    # extract a matrix with the bathymetry and the corresponding matrix of indices
+    matrix = ds.bathy.isel(lat=slice(lat_idx-halfsize, lat_idx+halfsize+1), lon=slice(lon_idx-halfsize, lon_idx+halfsize+1))
+    matrix_ind = [(l1, l2) for l1 in range(lat_idx-halfsize, lat_idx+halfsize+1) for l2 in range(lon_idx-halfsize, lon_idx+halfsize+1)]
+    lats_ind = range(lat_idx-halfsize, lat_idx+halfsize+1)
+    lons_ind = range(lon_idx-halfsize, lon_idx+halfsize+1)
+
+    # return the matrix and two arrays (lat and lon)
+    return matrix, lats_ind, lons_ind
