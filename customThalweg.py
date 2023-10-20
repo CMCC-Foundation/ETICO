@@ -83,12 +83,31 @@ if __name__ == "__main__":
 
         # identify the next element based on the zonal direction
         next_value, next_coords = find_next_through_zonal_direction(submatrix, zd, lon_idx, lat_idx)
-        next_el_lat_idx = lat_idx + next_coords[0]
-        next_el_lon_idx = lon_idx + next_coords[1]
+        try:
+            next_el_lat_idx = lat_idx + next_coords[0]
+            next_el_lon_idx = lon_idx + next_coords[1]
+        except TypeError: # our next element is None!
+            print(colored("__main__", "blue", attrs=["bold"]) + " --- Our next element is a None. END OF THALWEG GENERATION!")
+            break                       
+        
         next_el_depth = ds.bathy[next_el_lat_idx, next_el_lon_idx].values  
         
+        # Update the current point to the one with minimum bathymetry
+        lat_idx, lon_idx = next_el_lat_idx, next_el_lon_idx
+        depth = get_depth(ds, (lat_idx, lon_idx))
+        
+        # check neighborhood
+        allNanInfVis = True
+        neighborhood = get_3x3_submatrix(ds.bathy, lat_idx, lon_idx)
+        for n in neighborhood:
+            
+            # check if nan/inf (inf = already part of the thalweg)
+            if (not np.isnan(n[1])) and (not np.isinf(n[1])):
+                allNanInfVis = False
+                break              
+                
+        
         # # check neighborhood
-        # allNanInfVis = True
         # neighborhood = [((lati, loni), get_depth(ds, (lati, loni))) for lati in lat_ind_list for loni in lon_ind_list ]
         # for n in neighborhood:
         
@@ -100,27 +119,20 @@ if __name__ == "__main__":
         #         print("Not all the elements are nan/inf. Found %s" % str(n[1]))
         #         break                
             
-        # # if all nan/inf (so out of the river or already in the thalweg), the procedure ends
-        # # otherwise we go on selecting the element with the minimum bathymetry
-        # if allNanInfVis:
-        #     print("=== END OF THALWEG GENERATION ===")
-        #     break           
-        
-        # # Get the index of the cell with minimum bathymetry
-        # (min_lat_rel, min_lon_rel), depth = get_min_index(matrix)
-        # if min_lat_rel == None:
-        #     print("[__main__] === END OF THALWEG GENERATION!")
-        #     break
-        
-        # Update the current point to the one with minimum bathymetry
-        lat_idx, lon_idx = next_el_lat_idx, next_el_lon_idx
-        depth = get_depth(ds, (lat_idx, lon_idx))
-        print(colored("__main__", "blue", attrs=["bold"]) + " --- New matrix will be centered on %s,%s with depth %s" % (lat_idx, lon_idx, depth))
+        # if all nan/inf (so out of the river or already in the thalweg), the procedure ends
+        # otherwise we go on selecting the element with the minimum bathymetry
+        if allNanInfVis:
+            print(colored("__main__", "blue", attrs=["bold"]) + " --- All the elements are nan/inf. END OF THALWEG GENERATION!")
+            break           
         
         # increment iteration
         iterat += 1
-        if iterat == 10:
+        if iterat == 100:
             break
+        
+        # ready for next iteration!
+        print(colored("__main__", "blue", attrs=["bold"]) + " --- New matrix will be centered on %s,%s with depth %s" % (lat_idx, lon_idx, depth))
+
         
     #######################################################################
     #
@@ -138,123 +150,7 @@ if __name__ == "__main__":
     # # PLOT
     # #
     # #######################################################################
-    
-    # # manipulate ods dataset for view
-    # filtered_data = ods.bathy.where(ods.bathy >= 0, other=np.nan)
-
-    # # bounding box
-    # min_lat = 44.92
-    # max_lat = 45
-    # min_lon = 12.06
-    # max_lon = 12.23
-    # # min_lat = 44.9
-    # # max_lat = 45.0
-    # # min_lon = 12.14
-    # # max_lon = 12.26
-    
-    # # Extract the bathy variable
-    # #bathy = ds['bathy']
-    # lat = ods['lat']
-    # lon = ods['lon']
-    
-    # # Create a figure and axis with Cartopy projection
-    # fig, ax = plt.subplots(subplot_kw={'projection': ccrs.Mercator()}, dpi=1000)
-
-    # # Plot the bathymetry variable
-    # cmap = plt.get_cmap('winter')  # Choose a colormap
-    # #bathy_plot = ax.pcolormesh(lon, lat, ods.bathy, shading='gouraud', cmap=cmap)
-    # # bathy_plot = ax.contour(lon, lat, ods.bathy, shading='gouraud', cmap=cmap)
-    # bathy_plot = ax.pcolormesh(lon, lat, filtered_data, cmap=cmap)
-    # bathy_plot = ax.pcolormesh(lon, lat, ods.bathy, cmap=cmap)
-    # #bathy_plot = ax.pcolor(lon, lat, ods.bathy, cmap=cmap, antialiased=True, shading='auto')
-    
-    # # add the thalweg points    
-    # ax.plot(float(ds.lon[thalweg[0][1]]), float(ds.lat[thalweg[0][0]]), color='red', markersize=3, marker='x') 
-    # for el in thalweg:
-    #     ax.plot(float(ds.lon[el[1]]), float(ds.lat[el[0]]), color='red', marker='o', markersize=0.4) #, label=str(el)))    
-        
-    # # Add coastlines
-    # ax.add_feature(cfeature.COASTLINE)
-    # ax.coastlines()
-
-    # # Add gridlines    
-    # gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
-    #                   linewidth=0.25, color='gray', alpha=0.5, linestyle='--')
-    # # gl.xlabels_top = False
-    # # gl.ylabels_left = True
-    # # gl.ylabels_right = False
-    # # gl.xlabel_style = {'size': 5}
-    # # gl.ylabel_style = {'size': 5}
-    
-    # custom_x_ticks = [1.5, 3.5]  # Replace with your custom x-axis tick positions
-    # custom_y_ticks = [15, 25]    # Replace with your custom y-axis tick positions
-
-    # ax.set_xticks(np.linspace(min_lon, max_lon, num=5))
-    # for t in ax.get_xticklabels():
-    #     t.set_fontsize(5)  
-
-    # ax.set_yticks(np.linspace(min_lat, max_lat, num=5))
-    # for t in ax.get_yticklabels():
-    #     t.set_fontsize(5)  
-    
-    # # ax.set_yticks(custom_y_ticks)
-    
-    # # Set the limits for the x-axis and y-axis to zoom to the specified area
-    # ax.set_xlim(min_lon, max_lon)
-    # ax.set_ylim(min_lat, max_lat)
-        
-    # # Set plot title and colorbar
-    # plt.title('Bathymetry and Thalweg', fontsize=5)
-    # cb = plt.colorbar(bathy_plot, label='Depth (m)', shrink=0.5)
-    # for t in cb.ax.get_yticklabels():
-    #     t.set_fontsize(5)        
-
-    # # Show the plot
-    # plt.show()
 
     
-    
-    
-    
-    # # # bounding box
-    # # min_lat = 44.9
-    # # min_lon = 12
-    # # max_lat = 45
-    # # max_lon = 12.3
-    
-    # # # Plot the bathymetry data
-    # # bathymetry_data = ds.bathy.values
-    
-    # # # Determine where the bathy data is non-null
-    # # non_null_mask = ~np.isnan(ds.bathy)
-    # # # Get the indices where the bathy data is non-null
-    # # non_null_indices = np.where(non_null_mask)
-
-    # # # Find min and max lat/lon for these indices
-    # # min_lat = ds.lat[non_null_indices[0].min()]
-    # # max_lat = ds.lat[non_null_indices[0].max()]
-    # # min_lon = ds.lon[non_null_indices[1].min()]
-    # # max_lon = ds.lon[non_null_indices[1].max()]
-
-    # # # Crop on the real area
-    # # cropped = ds.sel(lat=slice(min_lat, max_lat), lon=slice(min_lon, max_lon))
-    # # bathymetry_data = cropped.bathy.values
-    # # lats = cropped.lat.values
-    # # lons = cropped.lon.values
-    # # plt.figure()
-    # # plt.pcolormesh(lons, lats, bathymetry_data, shading='auto')
-    # # plt.colorbar(label='Bathymetry')
-
-    # # # add a marker for the starting point
-    # # plt.scatter(float(ds.lon[thalweg[0][1]]), float(ds.lat[thalweg[0][0]]), color='red', s=31, marker='x') 
-
-    # # # add a marker for each point of the thalweg
-    # # for el in thalweg:
-    # #     plt.scatter(float(ds.lon[el[1]]), float(ds.lat[el[0]]), color='red', s=0.21, marker='o')  # 's' is the marker size
-    
-    # # plt.ylim([44.9, 45])
-    # # plt.xlim([12, 12.25])
-    # # plt.show()
-    
-    # # Close the dataset
-    # ds.close()  
+    # Close the dataset
+    ds.close()  
