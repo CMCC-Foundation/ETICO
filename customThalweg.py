@@ -104,20 +104,7 @@ if __name__ == "__main__":
             # check if nan/inf (inf = already part of the thalweg)
             if (not np.isnan(n[1])) and (not np.isinf(n[1])):
                 allNanInfVis = False
-                break              
-                
-        
-        # # check neighborhood
-        # neighborhood = [((lati, loni), get_depth(ds, (lati, loni))) for lati in lat_ind_list for loni in lon_ind_list ]
-        # for n in neighborhood:
-        
-        #     print("[__main__] === Checking neighbor %s" % str(n))
-            
-        #     # check if nan/inf (inf = already part of the thalweg)
-        #     if (not np.isnan(n[1])) and (not np.isinf(n[1])):
-        #         allNanInfVis = False
-        #         print("Not all the elements are nan/inf. Found %s" % str(n[1]))
-        #         break                
+                break                              
             
         # if all nan/inf (so out of the river or already in the thalweg), the procedure ends
         # otherwise we go on selecting the element with the minimum bathymetry
@@ -145,12 +132,19 @@ if __name__ == "__main__":
     for p in range(len(thalweg)):
         print("%s) - %s [%s]" % (p, thalweg[p], thalweg_depth[p]))
 
-    # #######################################################################
-    # #
-    # # PLOT
-    # #
-    # #######################################################################
+    #######################################################################
+    #
+    # PLOT
+    #
+    #######################################################################
 
-    
+    plot(ods, thalweg, thalweg_depth)
+
+    #######################################################################
+    #
+    # THE END...
+    #
+    #######################################################################
+
     # Close the dataset
     ds.close()  
