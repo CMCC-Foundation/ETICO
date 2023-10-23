@@ -35,8 +35,12 @@ st_lon = 12.159
 if __name__ == "__main__":
     
     # Read the name of the NetCDF file
-    filename = sys.argv[1]
-    configFile = sys.argv[2]
+    try:
+        filename = sys.argv[1]
+        configFile = sys.argv[2]
+    except IndexError:
+        print(colored("__main__", "red", attrs=["bold"]) + " --- Not enough parameters! Please provide bathymetry file and config file.")
+        sys.exit(1)
     
     # Open the NetCDF file
     print("[__main__] === Opening file %s" % filename)

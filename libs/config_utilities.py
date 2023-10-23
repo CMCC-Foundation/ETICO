@@ -53,25 +53,25 @@ def read_config(configFile):
         configDict["maxSearchAlgo"] = config.get("Algorithm", "MaxSearchAlgo")
     except NoOptionError:
         raise IncompleteConfigFileError("Missing 'MaxSearchAlgo' option in 'Algorithm' section of configuration file!")
-        sys.exit(1)
+        sys.exit(2)
     except NoSectionError:
         print(traceback.print_exc())
         raise IncompleteConfigFileError("Missing 'Algorithm' section of configuration file!")
-        sys.exit(1)
+        sys.exit(3)
     
     # try to read the window size
     try:
         configDict["windowSize"] = config.getint("Algorithm", "WindowSize")
     except NoOptionError:
         raise IncompleteConfigFileError("Missing 'WindowSize' option in 'Algorithm' section of configuration file!")
-        sys.exit(1)
+        sys.exit(4)
     except NoSectionError:
         raise IncompleteConfigFileError("Missing 'Algorithm' section of configuration file!")
-        sys.exit(1)
+        sys.exit(3)
         
     if not configDict["maxSearchAlgo"] in ["Zonal", "Classic"]:
         raise UnsupportedMaxSearchAlgoError()
-        sys.exit(1)
+        sys.exit(5)
         
     # return
     return configDict
