@@ -11,6 +11,32 @@ $ python customThalweg.py <BATHYMETRY_FILE> <CONFIG_FILE>
 
 Please remember to check that settings in the config file are correct. See `sample.conf` for an example.
 
+## Code structure
+
+If you want to investigate the code, or implement your changes, the following information about the structure may be helpful:
+
+```
+.
+├── customThalweg.py                      # our main starting point
+├── dataset                               # a collection of datasets to test the application
+│   ├── GORO_100m_reg.nc                  # a section of the Po Goro branch with 100m resolution
+│   └── GORO_10m_reg.nc                   # a section of the Po Goro branch with 10m resolution
+├── __init__.py
+├── libs                                  # the folder hosting the main code modules
+│   ├── config_utilities.py               # the module taking care of the configuration
+│   ├── exceptions.py                     # the module defining our custom exceptions
+│   ├── __init__.py
+│   ├── matrix_utilities.py               # the module hosting functions to deal with matrices
+│   ├── plot_utilities.py                 # the module taking care of plot functionalities
+│   ├── print_utilities.py                # a collection of print helpers
+│   └── stopping_criteria.py              # where to implement the stopping criteria
+├── logs                                  # a (currently not used) folder to automatically store logs
+├── plots                                 # a (currently not used) fodler to automatically store plots
+├── README.md
+└── sample.conf                           # an example of configuration file
+
+```
+
 ## Error codes
 
 The script fails with an error code that should help the user to discover what's wrong:
