@@ -48,6 +48,12 @@ def read_config(configFile):
     config = ConfigParser()
     config.read(configFile)
     
+    ###########################################
+    #
+    # algorithm section
+    #
+    ###########################################
+    
     # read the max search algo         
     try:
         configDict["maxSearchAlgo"] = config.get("Algorithm", "MaxSearchAlgo")
@@ -72,6 +78,67 @@ def read_config(configFile):
     if not configDict["maxSearchAlgo"] in ["Zonal", "Classic"]:
         raise UnsupportedMaxSearchAlgoError()
         sys.exit(5)
-        
+     
+    ###########################################
+    #
+    # plot section
+    #
+    ###########################################       
+
+    # read the point sparsity value
+    try:
+        configDict["pointSparsity"] = config.getint("Plot", "PointSparsity")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'PointSparsity' option in 'Plot' section of configuration file!")
+        sys.exit(7)
+
+    # read the pointsEnabled
+    try:
+        configDict["pointsEnabled"] = config.getboolean("Plot", "PointsEnabled")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'PointsEnabled' option in 'Plot' section of configuration file!")
+        sys.exit(8)
+    
+    # read the lablesEnabled
+    try:
+        configDict["labelsEnabled"] = config.getboolean("Plot", "LabelsEnabled")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'LabelsEnabled' option in 'Plot' section of configuration file!")
+        sys.exit(9)
+    
+    # read the pointsSize
+    try:
+        configDict["pointsSize"] = config.getfloat("Plot", "PointsSize")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'PointsSize' option in 'Plot' section of configuration file!")
+        sys.exit(10)
+ 
+    # read the labelsSize
+    try:
+        configDict["labelsSize"] = config.getfloat("Plot", "LabelsSize")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'LabelsSize' option in 'Plot' section of configuration file!")
+        sys.exit(11)
+    
     # return
     return configDict

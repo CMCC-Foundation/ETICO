@@ -19,17 +19,17 @@ If you want to investigate the code, or implement your changes, the following in
 .
 ├── customThalweg.py                      # our main starting point
 ├── dataset                               # a collection of datasets to test the application
-│   ├── GORO_100m_reg.nc                  # a section of the Po Goro branch with 100m resolution
-│   └── GORO_10m_reg.nc                   # a section of the Po Goro branch with 10m resolution
+│   ├── GORO_100m_reg.nc                  # a section of the Po Goro branch with 100m resolution
+│   └── GORO_10m_reg.nc                   # a section of the Po Goro branch with 10m resolution
 ├── __init__.py
 ├── libs                                  # the folder hosting the main code modules
-│   ├── config_utilities.py               # the module taking care of the configuration
-│   ├── exceptions.py                     # the module defining our custom exceptions
-│   ├── __init__.py
-│   ├── matrix_utilities.py               # the module hosting functions to deal with matrices
-│   ├── plot_utilities.py                 # the module taking care of plot functionalities
-│   ├── print_utilities.py                # a collection of print helpers
-│   └── stopping_criteria.py              # where to implement the stopping criteria
+│   ├── config_utilities.py               # the module taking care of the configuration
+│   ├── exceptions.py                     # the module defining our custom exceptions
+│   ├── __init__.py
+│   ├── matrix_utilities.py               # the module hosting functions to deal with matrices
+│   ├── plot_utilities.py                 # the module taking care of plot functionalities
+│   ├── print_utilities.py                # a collection of print helpers
+│   └── stopping_criteria.py              # where to implement the stopping criteria
 ├── logs                                  # a (currently not used) folder to automatically store logs
 ├── plots                                 # a (currently not used) fodler to automatically store plots
 ├── README.md
@@ -46,7 +46,12 @@ The script fails with an error code that should help the user to discover what's
 3. Incomplete configuration file. Missing section "Algorithm"
 4. Incomplete configuration file. Missing "WindowSize" in section "Algorithm"
 5. Wrong setting in configuration file. "MaxSearchAlgo" can only be "Zonal" or "Classic" (no quotes)
-
+6. Incomplete configuration file. Missing section "Plot"
+7. Incomplete configuration file. Missing "PointSparsity" in section "Plot"
+8. Incomplete configuration file. Missing "PointsEnabled" in section "Plot"
+9. Incomplete configuration file. Missing "LablesEnabled" in section "Plot"
+10. Incomplete configuration file. Missing "PointsSize" in section "Plot"
+11. Incomplete configuration file. Missing "LabelsSize" in section "Plot"
 
 ## Next steps
 1. Implementation of automatic identification of starting point

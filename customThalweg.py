@@ -169,7 +169,7 @@ if __name__ == "__main__":
     #######################################################################
 
     # invoke the plot function
-    plot(ods, thalweg, thalweg_depth)
+    plot(ods, thalweg, thalweg_depth, configDict)
 
     #######################################################################
     #

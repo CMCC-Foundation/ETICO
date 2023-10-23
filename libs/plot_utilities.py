@@ -22,7 +22,7 @@ from libs.print_utilities import *
 #
 #########################################################
 
-def plot(ds, thalweg, thalweg_depth):
+def plot(ds, thalweg, thalweg_depth, configDict):
     
     """Just an handler to have a clear/simplified view of a matrix
     
@@ -34,6 +34,8 @@ def plot(ds, thalweg, thalweg_depth):
         a list of [lat_idx, lon_idx] elements
     thalweg_depth: list
         a list of the depths for all the values
+    configDict: dict
+        a dictionary holding the whole configuration
         
     Returns
     -------
@@ -68,14 +70,20 @@ def plot(ds, thalweg, thalweg_depth):
     segPointsLats = [float(ds.lat[thalweg[0][0]])]
     for el in thalweg:
         counter += 1
-        if counter % 5 == 0:
+        if counter % configDict["pointSparsity"] == 0:
+
+            # draw points
+            if configDict["pointsEnabled"]:            
+                ax.plot(float(ds.lon[el[1]]), float(ds.lat[el[0]]), color='red', marker='.', markersize=configDict["pointsSize"])
+                
+            # draw labels
+            if configDict["labelsEnabled"]:
+                ax.text(float(ds.lon[el[1]]), float(ds.lat[el[0]]), str(counter), fontsize=configDict["labelsSize"])
             
-            ax.plot(float(ds.lon[el[1]]), float(ds.lat[el[0]]), color='red', marker='.', markersize=0.5)
-            # ax.text(float(ds.lon[el[1]]), float(ds.lat[el[0]]), str(counter), fontsize=2)
+            # draw segments
             segPointsLats.append(float(ds.lat[el[0]]))
             segPointsLons.append(float(ds.lon[el[1]]))            
             ax.plot(segPointsLons, segPointsLats, linestyle="-", linewidth=0.4, color='black')
-
             segPointsLats = [float(ds.lat[el[0]])]
             segPointsLons = [float(ds.lon[el[1]])]         
 
@@ -119,46 +127,3 @@ def plot(ds, thalweg, thalweg_depth):
     plt.show()
 
     print(colored("libs::plot_utilities::plot", "blue", attrs=["bold"]) + " --- Generation of plot complete.")
-
-    
-    
-    
-    # # # # bounding box
-    # # # min_lat = 44.9
-    # # # min_lon = 12
-    # # # max_lat = 45
-    # # # max_lon = 12.3
-    
-    # # # # Plot the bathymetry data
-    # # # bathymetry_data = ds.bathy.values
-    
-    # # # # Determine where the bathy data is non-null
-    # # # non_null_mask = ~np.isnan(ds.bathy)
-    # # # # Get the indices where the bathy data is non-null
-    # # # non_null_indices = np.where(non_null_mask)
-
-    # # # # Find min and max lat/lon for these indices
-    # # # min_lat = ds.lat[non_null_indices[0].min()]
-    # # # max_lat = ds.lat[non_null_indices[0].max()]
-    # # # min_lon = ds.lon[non_null_indices[1].min()]
-    # # # max_lon = ds.lon[non_null_indices[1].max()]
-
-    # # # # Crop on the real area
-    # # # cropped = ds.sel(lat=slice(min_lat, max_lat), lon=slice(min_lon, max_lon))
-    # # # bathymetry_data = cropped.bathy.values
-    # # # lats = cropped.lat.values
-    # # # lons = cropped.lon.values
-    # # # plt.figure()
-    # # # plt.pcolormesh(lons, lats, bathymetry_data, shading='auto')
-    # # # plt.colorbar(label='Bathymetry')
-
-    # # # # add a marker for the starting point
-    # # # plt.scatter(float(ds.lon[thalweg[0][1]]), float(ds.lat[thalweg[0][0]]), color='red', s=31, marker='x') 
-
-    # # # # add a marker for each point of the thalweg
-    # # # for el in thalweg:
-    # # #     plt.scatter(float(ds.lon[el[1]]), float(ds.lat[el[0]]), color='red', s=0.21, marker='o')  # 's' is the marker size
-    
-    # # # plt.ylim([44.9, 45])
-    # # # plt.xlim([12, 12.25])
-    # # # plt.show()
