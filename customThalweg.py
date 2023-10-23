@@ -7,11 +7,15 @@ import xarray as xr
 import numpy as np
 import sys
 import pdb
+import traceback
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from scipy import interpolate
+from configparser import *
 
 # local requirements
+from libs.stopping_criteria import *
+from libs.config_utilities import *
 from libs.matrix_utilities import *
 from libs.print_utilities import *
 from libs.plot_utilities import *
@@ -32,6 +36,7 @@ if __name__ == "__main__":
     
     # Read the name of the NetCDF file
     filename = sys.argv[1]
+    configFile = sys.argv[2]
     
     # Open the NetCDF file
     print("[__main__] === Opening file %s" % filename)
@@ -55,6 +60,22 @@ if __name__ == "__main__":
 
     # Start an 'endless' loop
     iterat = 0
+        
+    #######################################################################
+    #
+    # READ CONFIG
+    #
+    #######################################################################
+    
+    # create a parser and parse the file    
+    configDict = read_config(configFile)
+    
+    #######################################################################
+    #
+    # MAIN LOOP
+    #
+    #######################################################################
+
     while True:
         
         # debug print
@@ -72,22 +93,33 @@ if __name__ == "__main__":
         visited.append((int(lat_idx), int(lon_idx)))
         ds.bathy.data[lat_idx, lon_idx] = -np.inf
 
-        # extract a size x size matrix
-        size = 9
-        halfsize = size // 2
-        matrix, lat_ind_list, lon_ind_list = get_matrix_centered_on(ds, lat_idx, lon_idx, size)
-        
-        # identify the zonal direction
-        zd = get_zonal_direction(matrix, lon_ind_list, lat_ind_list)
-        submatrix = get_3x3_submatrix(ds.bathy, lat_idx, lon_idx)
-
         # identify the next element based on the zonal direction
-        next_value, next_coords = find_next_through_zonal_direction(submatrix, zd, lon_idx, lat_idx)
+        if configDict["maxSearchAlgo"] == "Zonal":
+            
+            # set the half window size
+            halfsize = configDict["windowSize"] // 2
+            
+            # extract a size x size matrix
+            matrix, lat_ind_list, lon_ind_list = get_matrix_centered_on(ds, lat_idx, lon_idx, configDict["windowSize"])
+        
+            # identify the zonal direction
+            zd = get_zonal_direction(matrix, lon_ind_list, lat_ind_list)
+            submatrix = get_3x3_submatrix(ds.bathy, lat_idx, lon_idx)
+            
+            # find the maximum
+            next_value, next_coords = find_next_through_zonal_direction(submatrix, zd, lon_idx, lat_idx)
+            
+        else:
+            
+            # find the maximum
+            next_value, next_coords = find_next_through_classic_direction(ds, lon_idx, lat_idx, configDict["windowSize"])
+                        
+        # check the identified maximum value
         try:
             next_el_lat_idx = lat_idx + next_coords[0]
             next_el_lon_idx = lon_idx + next_coords[1]
         except TypeError: # our next element is None!
-            print(colored("__main__", "blue", attrs=["bold"]) + " --- Our next element is a None. END OF THALWEG GENERATION!")
+            print(colored("__main__", "blue", attrs=["bold"]) + " --- Our next element is None. END OF THALWEG GENERATION!")
             break                       
         
         next_el_depth = ds.bathy[next_el_lat_idx, next_el_lon_idx].values  
@@ -96,25 +128,18 @@ if __name__ == "__main__":
         lat_idx, lon_idx = next_el_lat_idx, next_el_lon_idx
         depth = get_depth(ds, (lat_idx, lon_idx))
         
-        # check neighborhood
-        allNanInfVis = True
+        # check neighborhood v2
         neighborhood = get_3x3_submatrix(ds.bathy, lat_idx, lon_idx)
-        for n in neighborhood:
-            
-            # check if nan/inf (inf = already part of the thalweg)
-            if (not np.isnan(n[1])) and (not np.isinf(n[1])):
-                allNanInfVis = False
-                break                              
-            
-        # if all nan/inf (so out of the river or already in the thalweg), the procedure ends
-        # otherwise we go on selecting the element with the minimum bathymetry
-        if allNanInfVis:
-            print(colored("__main__", "blue", attrs=["bold"]) + " --- All the elements are nan/inf. END OF THALWEG GENERATION!")
-            break           
+        shouldIstop = checkStop(neighborhood)
+        
+        # check stopping criteria
+        if shouldIstop:
+            print(colored("__main__", "blue", attrs=["bold"]) + " --- END OF THALWEG GENERATION!")
+            break              
         
         # increment iteration
         iterat += 1
-        if iterat == 100:
+        if iterat == 2000:
             break
         
         # ready for next iteration!
@@ -132,12 +157,14 @@ if __name__ == "__main__":
     for p in range(len(thalweg)):
         print("%s) - %s [%s]" % (p, thalweg[p], thalweg_depth[p]))
 
+
     #######################################################################
     #
     # PLOT
     #
     #######################################################################
 
+    # invoke the plot function
     plot(ods, thalweg, thalweg_depth)
 
     #######################################################################

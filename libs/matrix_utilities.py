@@ -267,10 +267,77 @@ def find_next_through_zonal_direction(matrix, coords, lon_idx, lat_idx):
             max_value = el["value"]
             max_coords = el["coords"]
             
+    # if coords are None, then extend the research to the whole submatrix
+    if max_coords == None:
+        max_coords, max_value = find_max(matrix)
+        if np.isinf(max_value):
+            return None, None
+        else:
+            max_coords = [max_coords[0]-1, max_coords[1]-1]
+            
     print(colored("libs::matrix_utilities::find_next_through_zonal_direction", "blue", attrs=["bold"]) + " --- Returning %s, %s" % (max_value, max_coords))
     return max_value, max_coords
             
     
+#########################################################
+#
+# find_next_through_classic_direction function
+#
+#########################################################
+
+def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size):
+     
+    """Extract the next element through the classic method
+    
+    Parameters
+    ----------
+    ds: np.matrix
+        The n x n matrix where to look for the next element
+    lat_idx: int
+        Latitude index of the center of the matrix
+    lon_idx: list
+        Longitude index of the center of the matrix
+    windowSize: int
+        The size of the window
+
+    Returns
+    -------
+    list
+        a list containing the lat and lon of the next element
+    """  
+    
+    # extract a size x size matrix
+    matrix, lat_ind_list, lon_ind_list = get_matrix_centered_on(ds, lat_idx, lon_idx, window_size)
+
+    # define the halfsize
+    halfsize = window_size // 2
+
+    # debug print
+    print(colored("libs::matrix_utilities::find_next_through_classic_direction", "blue", attrs=["bold"]) + " --- The extracted matrix is:")
+    print_matrix(matrix)
+
+    # find the maximum
+    (min_lat_rel, min_lon_rel), value = get_min_index(matrix)
+    if min_lat_rel == None:
+        print(colored("libs::matrix_utilities::find_next_through_zonal_direction", "blue", attrs=["bold"]) + " --- Next element is NONE")
+    
+    # get the global index of the new element
+    local_lat_coords = range(0 - halfsize, 0 + halfsize + 1)
+    local_lon_coords = range(0 - halfsize, 0 + halfsize + 1)
+    lat_shift = local_lat_coords[min_lat_rel]
+    lon_shift = local_lon_coords[min_lon_rel]
+    shifted_lat = lat_idx + lat_shift
+    shifted_lon = lon_idx + lon_shift
+    
+    # Update the current point to the one with minimum bathymetry
+    #coords = [shifted_lat, shifted_lon]
+    coords = [lat_shift, lon_shift]
+    depth = get_depth(ds, (shifted_lat, shifted_lon))
+    
+    # return
+    return depth, coords
+
+        
 #########################################################
 #
 # get_min_index function

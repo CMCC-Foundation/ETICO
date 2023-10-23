@@ -41,6 +41,8 @@ def plot(ds, thalweg, thalweg_depth):
     
     """
 
+    print(colored("libs::plot_utilities::plot", "blue", attrs=["bold"]) + " --- Plot starting...")
+
     # bounding box
     min_lat = 44.92
     max_lat = 45
@@ -61,9 +63,22 @@ def plot(ds, thalweg, thalweg_depth):
     
     # add the thalweg points    
     ax.plot(float(ds.lon[thalweg[0][1]]), float(ds.lat[thalweg[0][0]]), color='red', markersize=3, marker='x') 
+    counter = 0
+    segPointsLons = [float(ds.lon[thalweg[0][1]])]
+    segPointsLats = [float(ds.lat[thalweg[0][0]])]
     for el in thalweg:
-        ax.plot(float(ds.lon[el[1]]), float(ds.lat[el[0]]), color='red', marker='o', markersize=0.4) #, label=str(el)))    
-        
+        counter += 1
+        if counter % 5 == 0:
+            
+            ax.plot(float(ds.lon[el[1]]), float(ds.lat[el[0]]), color='red', marker='.', markersize=0.5)
+            # ax.text(float(ds.lon[el[1]]), float(ds.lat[el[0]]), str(counter), fontsize=2)
+            segPointsLats.append(float(ds.lat[el[0]]))
+            segPointsLons.append(float(ds.lon[el[1]]))            
+            ax.plot(segPointsLons, segPointsLats, linestyle="-", linewidth=0.4, color='black')
+
+            segPointsLats = [float(ds.lat[el[0]])]
+            segPointsLons = [float(ds.lon[el[1]])]         
+
     # Add coastlines
     ax.add_feature(cfeature.COASTLINE)
     ax.coastlines()
@@ -103,7 +118,8 @@ def plot(ds, thalweg, thalweg_depth):
     # Show the plot
     plt.show()
 
-    
+    print(colored("libs::plot_utilities::plot", "blue", attrs=["bold"]) + " --- Generation of plot complete.")
+
     
     
     
