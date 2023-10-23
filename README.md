@@ -10,3 +10,4 @@ Yet to come...
 3. Adding configuration file for plots
 4. Accurate checks on stopping criteria
 5. Support >9 windows
+6. Add an export to NetCDF or other formats
