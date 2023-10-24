@@ -1,6 +1,21 @@
 # EstuarIO_thalweg
 A python software to identify the thalweg in a river
 
+## Preparation
+
+Before running the script, you have to (create and) activate the proper environment. The creation can be done with:
+
+```
+$ conda create -f environment.yml --name myEnv
+```
+
+Then, activate the environment with:
+
+```
+$ conda activate myEnv
+```
+
+
 ## Invoking the script
 
 To invoke the script:
