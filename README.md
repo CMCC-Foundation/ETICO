@@ -54,19 +54,19 @@ If you want to investigate the code, or implement your changes, the following in
 
 ## Error codes
 
-The script fails with an error code that should help the user to discover what's wrong:
+The script fails with an **error code** that should help the user to discover what's wrong:
 
 1. Not enough parameters. You need to provide the bathymetry file and the configuration file
-2. Incomplete configuration file. Missing "MaxSearchAlgo" in section "Algorithm"
-3. Incomplete configuration file. Missing section "Algorithm"
-4. Incomplete configuration file. Missing "WindowSize" in section "Algorithm"
-5. Wrong setting in configuration file. "MaxSearchAlgo" can only be "Zonal" or "Classic" (no quotes)
-6. Incomplete configuration file. Missing section "Plot"
-7. Incomplete configuration file. Missing "PointSparsity" in section "Plot"
-8. Incomplete configuration file. Missing "PointsEnabled" in section "Plot"
-9. Incomplete configuration file. Missing "LablesEnabled" in section "Plot"
-10. Incomplete configuration file. Missing "PointsSize" in section "Plot"
-11. Incomplete configuration file. Missing "LabelsSize" in section "Plot"
+2. Incomplete configuration file. Missing `MaxSearchAlgo` in section `Algorithm`
+3. Incomplete configuration file. Missing section `Algorithm`
+4. Incomplete configuration file. Missing `WindowSize` in section `Algorithm`
+5. Wrong setting in configuration file. `MaxSearchAlgo` can only be `Zonal` or `Classic`
+6. Incomplete configuration file. Missing section `Plot`
+7. Incomplete configuration file. Missing `PointSparsity` in section `Plot`
+8. Incomplete configuration file. Missing `PointsEnabled` in section `Plot`
+9. Incomplete configuration file. Missing `LablesEnabled` in section `Plot`
+10. Incomplete configuration file. Missing `PointsSize` in section `Plot`
+11. Incomplete configuration file. Missing `LabelsSize` in section `Plot`
 
 ## Next steps
 1. Implementation of automatic identification of starting point
