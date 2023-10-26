@@ -139,6 +139,43 @@ def read_config(configFile):
     except NoOptionError:
         raise IncompleteConfigFileError("Missing 'LabelsSize' option in 'Plot' section of configuration file!")
         sys.exit(11)
+
+
+    ###########################################
+    #
+    # output section
+    #
+    ###########################################
     
+    # read the name of the directory for plots   
+    try:
+        configDict["plotDirectory"] = config.get("Output", "PlotDirectory")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Output' section of configuration file!")
+        sys.exit(12)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'PlotDirectory' option in 'Output' section of configuration file!")
+        sys.exit(13)
+
+    # read the name of the baseline file
+    try:
+        configDict["baselinePlotName"] = config.get("Output", "BaselinePlotName")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Output' section of configuration file!")
+        sys.exit(12)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'BaselinePlotName' option in 'Output' section of configuration file!")
+        sys.exit(14)
+
+
+    ###########################################
+    #
+    # output section
+    #
+    ###########################################
+
     # return
     return configDict
+ 

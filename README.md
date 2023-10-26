@@ -67,6 +67,10 @@ The script fails with an **error code** that should help the user to discover wh
 9. Incomplete configuration file. Missing `LablesEnabled` in section `Plot`
 10. Incomplete configuration file. Missing `PointsSize` in section `Plot`
 11. Incomplete configuration file. Missing `LabelsSize` in section `Plot`
+12. Incomplete configuration file. Missing section `Output`
+13. Incomplete configuration file. Missing `PlotDirectory` in section `Output`
+14. Incomplete configuration file. Missing `BaselinePlotName` in section `Output`
+
 
 ## Next steps
 1. Implementation of automatic identification of starting point

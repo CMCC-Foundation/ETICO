@@ -5,6 +5,7 @@ from termcolor import colored
 import matplotlib.pyplot as plt
 import xarray as xr
 import numpy as np
+import os
 import sys
 import pdb
 import cartopy.crs as ccrs
@@ -18,13 +19,77 @@ from libs.print_utilities import *
     
 #########################################################
 #
+# plot baseline
+#
+#########################################################
+
+def plot_baseline(baseline, ds, configDict):
+    
+    """A function to plot the baseline on a file
+    
+    Parameters
+    ----------
+    baseline: xarray.core.dataarray.DataArray
+        the original dataset
+    ds: xarray.core.dataarray.DataArray
+        the original dataset
+    configDict: dict
+        a dictionary holding the whole configuration
+        
+    Returns
+    -------
+    Nothing
+    
+    """
+
+    # debug print
+    print(colored("libs::plot_utilities::plot_baseline", "blue", attrs=["bold"]) + " --- Plot starting...")
+
+    # Extract the bathy variable
+    lat = ds['lat']
+    lon = ds['lon']
+    
+    # Create a figure and axis with Cartopy projection
+    fig, ax = plt.subplots(subplot_kw={'projection': ccrs.Mercator()}, dpi=1000)
+
+    # Plot the bathymetry variable
+    cmap = plt.get_cmap('winter')
+    
+    # bathy_plot = ax.pcolormesh(lon, lat, manip_mask, cmap=cmap)
+    bathy_plot = ax.pcolormesh(lon, lat, baseline, cmap=cmap)
+    
+    # Add gridlines    
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
+                      linewidth=0.25, color='gray', alpha=0.5, linestyle='--')
+
+    # Add ticks for longitude
+    ax.set_xticks(np.linspace(lon.min(), lon.max(), num=5))
+    for t in ax.get_xticklabels():
+        t.set_fontsize(5)  
+
+    # Add the ticks for latitude
+    ax.set_yticks(np.linspace(lat.min(), lat.max(), num=5))
+    for t in ax.get_yticklabels():
+        t.set_fontsize(5)  
+    
+    # Set plot title and colorbar
+    plt.title('Baseline', fontsize=5)
+    
+    # Save the plot to file
+    outputFile = os.path.join(configDict["plotDirectory"], configDict["baselinePlotName"])
+    print(colored("libs::plot_utilities::plot_baseline", "blue", attrs=["bold"]) + " --- Saving baseline plot to %s" % outputFile)
+    plt.savefig(outputFile)
+
+
+#########################################################
+#
 # plot
 #
 #########################################################
 
 def plot(ds, thalweg, thalweg_depth, configDict):
     
-    """Just an handler to have a clear/simplified view of a matrix
+    """A function to plot the thalweg
     
     Parameters
     ----------

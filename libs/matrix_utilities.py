@@ -13,6 +13,7 @@ from scipy import interpolate
 
 # local reqs
 from libs.print_utilities import *
+from libs.direction_utilities import *
 
     
 #########################################################
@@ -285,7 +286,7 @@ def find_next_through_zonal_direction(matrix, coords, lon_idx, lat_idx):
 #
 #########################################################
 
-def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size):
+def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, last_direction):
      
     """Extract the next element through the classic method
     
@@ -297,8 +298,10 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size):
         Latitude index of the center of the matrix
     lon_idx: list
         Longitude index of the center of the matrix
-    windowSize: int
+    window_size: int
         The size of the window
+    last_direction: string
+        The string indicating the direction of the latest movement
 
     Returns
     -------
@@ -316,10 +319,32 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size):
     print(colored("libs::matrix_utilities::find_next_through_classic_direction", "blue", attrs=["bold"]) + " --- The extracted matrix is:")
     print_matrix(matrix)
 
-    # find the maximum
-    (min_lat_rel, min_lon_rel), value = get_min_index(matrix)
-    if min_lat_rel == None:
+    # find the cells with the maximum value
+    # (min_lat_rel, min_lon_rel), value = get_max_index(matrix)
+    coords_list, value = get_max_index(matrix)
+    
+    # check if the max value in the cell is NaN
+    if np.isnan(value):
         print(colored("libs::matrix_utilities::find_next_through_zonal_direction", "blue", attrs=["bold"]) + " --- Next element is NONE")
+        return None, None
+    
+    # NOTE:
+    # now we potentially have multiple elements with the same maximum value
+    # we must implement the choice... For the moment let's force the element 0 (that was the previous automatic behaviour)
+    # later on we will have to pass to this function the last direction, check the direction of each element and decide
+    # where to go
+    
+    # if more than one element found, then check the direction of every member
+    nextDirs = []
+    for el in coords_list:
+        
+        # determine direction of the next candidate
+        nextDirs.append(get_direction_str(el))
+        
+    # NOTE:
+    # for the moment we just use the first element (we say it again)
+    (min_lat_rel, min_lon_rel) = coords_list[0]
+    
     
     # get the global index of the new element
     local_lat_coords = range(0 - halfsize, 0 + halfsize + 1)
@@ -340,11 +365,11 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size):
         
 #########################################################
 #
-# get_min_index function
+# get_max_index function
 #
 #########################################################
 
-def get_min_index(matrix):
+def get_max_index(matrix):
 
     """Return the index of the minimum bathymetry in the matrix.
 
@@ -356,23 +381,31 @@ def get_min_index(matrix):
     Returns
     -------
     list
-        a [lat,lon] structure with coordinates of the min element
+        a list of [lat,lon] elements with coordinates of the cells having the maximum value
     float
-        the depth value for that point
+        the depth value for that points
     """
         
-    # get the minimum
-    try:
-        coords = np.unravel_index(np.nanargmax(matrix), matrix.shape)
-    except ValueError:
-        return None, None, None
-
-    # check if nan
-    if np.isnan(matrix[coords]):
-        return coords, None
+    # get the maximum
+    maxValue = np.nanmax(matrix)
     
-    print("[get_min_index] === Returning %s, %s" % (coords, matrix[coords].values))
-    return coords, matrix[coords].values
+    # find the cells having that value
+    if np.isnan(maxValue):
+        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& QUI ")
+
+        coords = np.argwhere(np.isnan(maxValue))
+    else:
+        
+        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& QUA")
+
+        coords = np.argwhere(matrix.values == maxValue)
+
+    # print("[get_max_index] === Returning %s, %s" % (coords, matrix[coords].values))
+    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+    print(coords)
+    print(maxValue)
+    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+    return coords, maxValue
 
 
 #########################################################

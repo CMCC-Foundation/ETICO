@@ -14,7 +14,9 @@ from scipy import interpolate
 from configparser import *
 
 # local requirements
+from libs.direction_utilities import *
 from libs.stopping_criteria import *
+from libs.preproc_utilities import *
 from libs.config_utilities import *
 from libs.matrix_utilities import *
 from libs.print_utilities import *
@@ -24,6 +26,10 @@ from libs.exceptions import *
 # set the starting point
 st_lat = 44.933
 st_lon = 12.159
+
+# set the end point
+en_lat = 44.928
+en_lon = 12.233
 
 
 #########################################################
@@ -51,7 +57,7 @@ if __name__ == "__main__":
     lon_given = st_lon
     lat_idx = abs(ds.lat - lat_given).argmin().values
     lon_idx = abs(ds.lon - lon_given).argmin().values
-        
+    
     # Create a list of visited points
     visited = []  
     
@@ -59,12 +65,16 @@ if __name__ == "__main__":
     thalweg = []
     thalweg_depth = []
     
+    # initialize a variable to keep track of the last direction
+    lastDirection = None
+    
     # save the original bathy
     ods = ds.copy(deep=True)
 
     # Start an 'endless' loop
     iterat = 0
-        
+    
+    
     #######################################################################
     #
     # READ CONFIG
@@ -74,6 +84,20 @@ if __name__ == "__main__":
     # create a parser and parse the file    
     configDict = read_config(configFile)
     
+    
+    #######################################################################
+    #
+    # START PREPROC
+    #
+    #######################################################################
+    
+    # find the baseline
+    baseline = find_baseline(ds)
+
+    # plot the baseline    
+    plot_baseline(baseline, ds, configDict)
+
+
     #######################################################################
     #
     # MAIN LOOP
@@ -111,17 +135,35 @@ if __name__ == "__main__":
             submatrix = get_3x3_submatrix(ds.bathy, lat_idx, lon_idx)
             
             # find the maximum
-            next_value, next_coords = find_next_through_zonal_direction(submatrix, zd, lon_idx, lat_idx)
+            next_value, shift_coords = find_next_through_zonal_direction(submatrix, zd, lon_idx, lat_idx)
+            
+        elif configDict["maxSearchAlgo"] == "Classic":
+            
+            # find the cells with maximum value
+            next_value, shift_coords = find_next_through_classic_direction(ds, lon_idx, lat_idx, configDict["windowSize"], lastDirection)
+                
+            # # decide which cells to go to
+            # if len(shift_coords) > 1:
+            #     print("I STOP HERE")
+            #     sys.exit(199)
+            
+            #### note: we should modify the previous function in order to return a list of values if multiple cells with the same value exist
+            ####       ...then we need to deal with this type of result
+            
+            # since we have the shif coords, we can calculate the direction
+            # shift_coords = shift_coords[0]
+            lastDirection = get_direction_str(shift_coords)
             
         else:
             
-            # find the maximum
-            next_value, next_coords = find_next_through_classic_direction(ds, lon_idx, lat_idx, configDict["windowSize"])
+            # we should never get here, since we parse the config file
+            raise UnsupportedMaxSearchAlgoError()
+            sys.exit(5)
                         
         # check the identified maximum value
         try:
-            next_el_lat_idx = lat_idx + next_coords[0]
-            next_el_lon_idx = lon_idx + next_coords[1]
+            next_el_lat_idx = lat_idx + shift_coords[0]
+            next_el_lon_idx = lon_idx + shift_coords[1]
         except TypeError: # our next element is None!
             print(colored("__main__", "blue", attrs=["bold"]) + " --- Our next element is None. END OF THALWEG GENERATION!")
             break                       
