@@ -140,6 +140,61 @@ def read_config(configFile):
         raise IncompleteConfigFileError("Missing 'LabelsSize' option in 'Plot' section of configuration file!")
         sys.exit(11)
 
+    # read the latMin
+    try:
+        configDict["latMin"] = config.getfloat("Plot", "LatMin")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'LatMin' option in 'Plot' section of configuration file!")
+        sys.exit(19)
+
+    # read the latMax
+    try:
+        configDict["latMax"] = config.getfloat("Plot", "LatMax")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'LatMax' option in 'Plot' section of configuration file!")
+        sys.exit(20)
+
+    # read the lonMin
+    try:
+        configDict["lonMin"] = config.getfloat("Plot", "LonMin")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'LonMin' option in 'Plot' section of configuration file!")
+        sys.exit(21)
+ 
+    # read the lonMax
+    try:
+        configDict["lonMax"] = config.getfloat("Plot", "LonMax")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'LonMax' option in 'Plot' section of configuration file!")
+        sys.exit(22)                    
+
+    # read the plotsteps
+    try:
+        configDict["plotSteps"] = config.getboolean("Plot", "PlotSteps")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Plot' section of configuration file!")
+        sys.exit(6)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'PlotSteps' option in 'Plot' section of configuration file!")
+        sys.exit(23)                    
+
 
     ###########################################
     #
@@ -170,9 +225,72 @@ def read_config(configFile):
         sys.exit(14)
 
 
+    # read the name of the log file
+    try:
+        configDict["logFile"] = config.get("Output", "LogFile")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Output' section of configuration file!")
+        sys.exit(12)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'LogFile' option in 'Output' section of configuration file!")
+        sys.exit(15)
+
+
+    # read the name of the log file
+    try:
+        configDict["outputDirectory"] = config.get("Output", "OutputDirectory")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Output' section of configuration file!")
+        sys.exit(12)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'OutputDirectory' option in 'Output' section of configuration file!")
+        sys.exit(16)
+        
+        
     ###########################################
     #
-    # output section
+    # debug section
+    #
+    ###########################################       
+
+    # read the plotStartPoint, if any
+    try:
+        configDict["plotStartPoint"] = config.getint("Debug", "PlotStartPoint")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Debug' section of configuration file!")
+        sys.exit(18)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'PointSparsity' option in 'Plot' section of configuration file!")
+        sys.exit(16)
+
+    # read the plotEndPoint, if any
+    try:
+        configDict["plotEndPoint"] = config.getint("Debug", "PlotEndPoint")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Debug' section of configuration file!")
+        sys.exit(18)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'PointsEnabled' option in 'Plot' section of configuration file!")
+        sys.exit(17)
+        
+    # read the thalwegStop
+    try:
+        configDict["thalwegStop"] = config.getint("Debug", "ThalwegStop")
+    except NoSectionError:
+        print(traceback.print_exc())
+        raise IncompleteConfigFileError("Missing 'Debug' section of configuration file!")
+        sys.exit(18)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'ThalwegStop' option in 'Plot' section of configuration file!")
+        sys.exit(24)
+
+    ###########################################
+    #
+    # return
     #
     ###########################################
 

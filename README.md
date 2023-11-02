@@ -70,7 +70,15 @@ The script fails with an **error code** that should help the user to discover wh
 12. Incomplete configuration file. Missing section `Output`
 13. Incomplete configuration file. Missing `PlotDirectory` in section `Output`
 14. Incomplete configuration file. Missing `BaselinePlotName` in section `Output`
-
+15. Incomplete configuration file. Missing `LogFile` in section `Output`
+16. Incomplete configuration file. Missing `PlotStartPoint` in section `Debug`
+17. Incomplete configuration file. Missing `PlotEndPoint` in section `Debug`
+19. Incomplete configuration file. Missing `LatMin` in section `Plot`
+20. Incomplete configuration file. Missing `LatMax` in section `Plot`
+21. Incomplete configuration file. Missing `LonMin` in section `Plot`
+22. Incomplete configuration file. Missing `LonMax` in section `Plot`
+23. Incomplete configuration file. Missing `PlotSteps` in section `Plot`
+100. Invalid zonal direction detected.
 
 ## Next steps
 1. Implementation of automatic identification of starting point

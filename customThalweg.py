@@ -45,11 +45,11 @@ if __name__ == "__main__":
         filename = sys.argv[1]
         configFile = sys.argv[2]
     except IndexError:
-        print(colored("__main__", "red", attrs=["bold"]) + " --- Not enough parameters! Please provide bathymetry file and config file.")
+        fullprint("__main__", "Not enough parameters! Please provide bathymetry file and config file.", error=True)
         sys.exit(1)
     
     # Open the NetCDF file
-    print("[__main__] === Opening file %s" % filename)
+    fullprint("__main__", "Opening file %s" % filename)
     ds = xr.open_dataset(filename)
     
     # Identify the indices of the point that is closest to the given lat and lon
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     lon_given = st_lon
     lat_idx = abs(ds.lat - lat_given).argmin().values
     lon_idx = abs(ds.lon - lon_given).argmin().values
-    
+
     # Create a list of visited points
     visited = []  
     
@@ -67,6 +67,7 @@ if __name__ == "__main__":
     
     # initialize a variable to keep track of the last direction
     lastDirection = None
+    directionList = []
     
     # save the original bathy
     ods = ds.copy(deep=True)
@@ -83,6 +84,17 @@ if __name__ == "__main__":
     
     # create a parser and parse the file    
     configDict = read_config(configFile)
+    
+     
+    #######################################################################
+    #
+    # OPEN LOG FILE
+    #
+    #######################################################################
+
+    if "logFile" in configDict and "outputDirectory" in configDict:
+        logFilePath = os.path.join(configDict["outputDirectory"], configDict["logFile"])
+        logFile = open(logFilePath, "w")
     
     
     #######################################################################
@@ -106,17 +118,18 @@ if __name__ == "__main__":
 
     while True:
         
-        # debug print
-        print(colored("__main__", "blue", attrs=["bold"]) + " --- ============================================================")
-        print(colored("__main__", "blue", attrs=["bold"]) + " --- Iteration %s with LAT_IDX: %s and LON_IDX: %s with DEPTH %s" % (iterat, lat_idx, lon_idx, ds.bathy.isel(lat=lat_idx, lon=lon_idx).values))
-
+        # debug print 
+        fullprint("__main__", "============================================================", logFile)
+        fullprint("__main__", "Iteration %s with LAT_IDX: %s and LON_IDX: %s with DEPTH %s" % (iterat, lat_idx, lon_idx, ds.bathy.isel(lat=lat_idx, lon=lon_idx).values), logFile)
+        
         # get the depth
         depth = get_depth(ds, (lat_idx, lon_idx))
         
         # save the point in thalweg
         thalweg.append((int(lat_idx), int(lon_idx)))
         thalweg_depth.append(depth)
-        
+        fullprint("__main__", "Adding to the thalweg %s, %s (depth %s)" % (int(lat_idx), int(lon_idx), depth), logFile)
+
         # mark the current cell as visited
         visited.append((int(lat_idx), int(lon_idx)))
         ds.bathy.data[lat_idx, lon_idx] = -np.inf
@@ -140,19 +153,13 @@ if __name__ == "__main__":
         elif configDict["maxSearchAlgo"] == "Classic":
             
             # find the cells with maximum value
-            next_value, shift_coords = find_next_through_classic_direction(ds, lon_idx, lat_idx, configDict["windowSize"], lastDirection)
-                
-            # # decide which cells to go to
-            # if len(shift_coords) > 1:
-            #     print("I STOP HERE")
-            #     sys.exit(199)
+            next_value, shift_coords, d = find_next_through_classic_direction(ds, lon_idx, lat_idx, configDict["windowSize"], directionList, logFile)
             
-            #### note: we should modify the previous function in order to return a list of values if multiple cells with the same value exist
-            ####       ...then we need to deal with this type of result
-            
-            # since we have the shif coords, we can calculate the direction
-            # shift_coords = shift_coords[0]
-            lastDirection = get_direction_str(shift_coords)
+            # debug print
+            fullprint("__main__", "Next element is %s with direction %s" % (d, next_value), logFile)
+
+            # save the last direction
+            directionList.append(d)
             
         else:
             
@@ -165,10 +172,10 @@ if __name__ == "__main__":
             next_el_lat_idx = lat_idx + shift_coords[0]
             next_el_lon_idx = lon_idx + shift_coords[1]
         except TypeError: # our next element is None!
-            print(colored("__main__", "blue", attrs=["bold"]) + " --- Our next element is None. END OF THALWEG GENERATION!")
+            fullprint("__main__", "Our next element is None. END OF THALWEG GENERATION!", logFile)
             break                       
         
-        next_el_depth = ds.bathy[next_el_lat_idx, next_el_lon_idx].values  
+        next_el_depth = ds.bathy[next_el_lat_idx, next_el_lon_idx].values
         
         # Update the current point to the one with minimum bathymetry
         lat_idx, lon_idx = next_el_lat_idx, next_el_lon_idx
@@ -176,20 +183,22 @@ if __name__ == "__main__":
         
         # check neighborhood v2
         neighborhood = get_3x3_submatrix(ds.bathy, lat_idx, lon_idx)
+        print(neighborhood)
         shouldIstop = checkStop(neighborhood)
         
         # check stopping criteria
         if shouldIstop:
-            print(colored("__main__", "blue", attrs=["bold"]) + " --- END OF THALWEG GENERATION!")
+            fullprint("__main__", "END OF THALWEG GENERATION!", logFile)
             break              
         
         # increment iteration
         iterat += 1
-        if iterat == 2000:
-            break
+        if configDict["thalwegStop"] > 0:
+            if configDict["thalwegStop"] == iterat:
+                break
         
         # ready for next iteration!
-        print(colored("__main__", "blue", attrs=["bold"]) + " --- New matrix will be centered on %s,%s with depth %s" % (lat_idx, lon_idx, depth))
+        fullprint("__main__", "New matrix will be centered on %s,%s with depth %s" % (lat_idx, lon_idx, depth), logFile)
 
         
     #######################################################################
@@ -198,10 +207,22 @@ if __name__ == "__main__":
     #
     #######################################################################
     
-    print(colored("__main__", "blue", attrs=["bold"]) + " ------------------------------------------")
-    print(colored("__main__", "blue", attrs=["bold"]) + " --- Our thalweg is:")
-    for p in range(len(thalweg)):
-        print("%s) - %s [%s]" % (p, thalweg[p], thalweg_depth[p]))
+    # fullprint("__main__", "================ THE END ================", logFile)
+    # fullprint("__main__", "Our thalweg is:", logFile)
+    # for p in range(len(thalweg)):
+    #     fullprint("__main__", "%s) - %s [%s]" % (p, thalweg[p], thalweg_depth[p]), logFile)
+
+    # counter = 0
+    # fullprint("__main__", "The log of directions is:", logFile)
+    # for d in directionList:        
+    #     fullprint("__main__", "%s -- %s" % (counter, d), logFile)
+    #     counter += 1
+
+    counter = 0
+    fullprint("__main__", "The log of directions is:", logFile)
+    for d in directionList:        
+        fullprint("__main__", "%s) - %s [%s] -- DIRECTION %s" % (counter, thalweg[counter], thalweg_depth[counter], d), logFile)
+        counter += 1
 
 
     #######################################################################
@@ -221,3 +242,7 @@ if __name__ == "__main__":
 
     # Close the dataset
     ds.close()  
+    
+    # close the log file, if any
+    if logFile:
+        logFile.close()

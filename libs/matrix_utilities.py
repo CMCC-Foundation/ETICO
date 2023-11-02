@@ -22,7 +22,7 @@ from libs.direction_utilities import *
 #
 #########################################################
 
-def get_zonal_direction(matrix, lats, lons):
+def get_zonal_direction(matrix, lats, lons, logFile=None):
     
     """Identifies the next element through the zonal direction
 
@@ -34,6 +34,8 @@ def get_zonal_direction(matrix, lats, lons):
         An array of the latitudes included in the submatrix
     lons: list
         An array of the longitudes included in the submatrix
+    logFile: fileDescriptor
+        A file descriptor for logging
 
     Returns
     -------
@@ -43,10 +45,6 @@ def get_zonal_direction(matrix, lats, lons):
          0,-1 (W)                0,1 (E)
          1,-1 (SW)    1,0 (S)    1,1 (SE)
     """
-    
-    # debug print
-    print(colored("libs::matrix_utilities::get_zonal_direction", "blue", attrs=["bold"]) + " --- Method starting")
-    print_matrix(matrix)
     
     # 0 - initialize data structures
     matrices = {}
@@ -89,11 +87,13 @@ def get_zonal_direction(matrix, lats, lons):
         lon_counter += 1
     
     # identify them minimum in this matrix, then the zonal direction
-    print(colored("libs::matrix_utilities::get_zonal_direction", "blue", attrs=["bold"]) + " --- Resampled matrix is:")
-    print(final_matrix)
+    fullprint("get_zonal_direction", "Resampled matrix is:", logFile)
+    fullprint_matrix(final_matrix)
+    
     coords,value = find_max(final_matrix)
     zd = [coords[0]-1, coords[1]-1]
-    print(colored("libs::matrix_utilities::get_zonal_direction", "blue", attrs=["bold"]) + " --- Zonal direction is %s,%s %s" % (zd[0], zd[1], print_zonal_direction(zd)))
+    fullprint("get_zonal_direction", "Zonal direction is %s,%s %s" % (zd[0], zd[1], print_zonal_direction(zd)), logFile)
+
 
     # return
     return zd
@@ -169,7 +169,7 @@ def get_3x3_submatrix(ds, lat_idx, lon_idx):
 #
 #########################################################
 
-def find_next_through_zonal_direction(matrix, coords, lon_idx, lat_idx):
+def find_next_through_zonal_direction(matrix, coords, lon_idx, lat_idx, logFile=None):
     
     """Extract the max from the 3 elements of the matrix identified by zonal direction
 
@@ -179,6 +179,8 @@ def find_next_through_zonal_direction(matrix, coords, lon_idx, lat_idx):
         The 3x3 matrix where to look for the maximum
     coords: list
         The lat and lon indices identifying the zonal direction
+    logFile: fileDescriptor
+        A file descriptor for logging purposes
 
     Returns
     -------
@@ -286,7 +288,7 @@ def find_next_through_zonal_direction(matrix, coords, lon_idx, lat_idx):
 #
 #########################################################
 
-def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, last_direction):
+def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, directionList, logFile):
      
     """Extract the next element through the classic method
     
@@ -300,8 +302,10 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, last_
         Longitude index of the center of the matrix
     window_size: int
         The size of the window
-    last_direction: string
-        The string indicating the direction of the latest movement
+    directionList: list
+        The list of the all the directions took in the past
+    logFile: fileDescriptor
+        A file descriptor for logging purposes
 
     Returns
     -------
@@ -310,41 +314,119 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, last_
     """  
     
     # extract a size x size matrix
-    matrix, lat_ind_list, lon_ind_list = get_matrix_centered_on(ds, lat_idx, lon_idx, window_size)
+    orig_matrix, lat_ind_list, lon_ind_list = get_matrix_centered_on(ds, lat_idx, lon_idx, window_size)
+
+    # make a work copy of the matrix
+    matrix = orig_matrix.copy()
 
     # define the halfsize
     halfsize = window_size // 2
 
     # debug print
-    print(colored("libs::matrix_utilities::find_next_through_classic_direction", "blue", attrs=["bold"]) + " --- The extracted matrix is:")
-    print_matrix(matrix)
+    fullprint("find_next_through_classic_direction", "The extracted matrix is:", logFile)
+    fullprint_matrix("find_next_through_classic_direction", matrix, logFile)
+    
+    checkDir = True
+    while True:    
+    
+        # find the cells with the maximum value (mind the plural!!!)
+        # (min_lat_rel, min_lon_rel), value = get_max_index(matrix)
+        coords_list, value = get_max_index(matrix)
+    
+        # get the list of acceptable directions
+        if len(directionList) > 0:
+            dirs = get_acceptable_dir(directionList[-1])
+        else:
+            dirs = ["NW", "N", "NE", "E", "SE", "S", "SW", "W"]
 
-    # find the cells with the maximum value
-    # (min_lat_rel, min_lon_rel), value = get_max_index(matrix)
-    coords_list, value = get_max_index(matrix)
-    
-    # check if the max value in the cell is NaN
-    if np.isnan(value):
-        print(colored("libs::matrix_utilities::find_next_through_zonal_direction", "blue", attrs=["bold"]) + " --- Next element is NONE")
-        return None, None
-    
-    # NOTE:
-    # now we potentially have multiple elements with the same maximum value
-    # we must implement the choice... For the moment let's force the element 0 (that was the previous automatic behaviour)
-    # later on we will have to pass to this function the last direction, check the direction of each element and decide
-    # where to go
-    
-    # if more than one element found, then check the direction of every member
-    nextDirs = []
-    for el in coords_list:
+        # check if the max value in the cell is NaN
+        if np.isnan(value):
+            fullprint("find_next_through_classic_direction", "Next element is NONE", logFile)
+            return None, None
         
-        # determine direction of the next candidate
-        nextDirs.append(get_direction_str(el))
+        # for the moment let's stick on the first
         
+        #####################
+        ##
+        ## TEST CODE START
+        ##
+        #####################
+        
+        # let's try to rank the points
+        
+        ranking = []
+        for p in coords_list:
+            rank_new_el = {}
+            rank_new_el["coords"] = p
+            
+            # get the direction of this element
+            rank_new_el_local = [p[0] - window_size//2, p[1] - window_size // 2]
+            rank_new_el["dir"] = get_direction_str(rank_new_el_local)    
+            
+            # add a score to the element based on the direction
+            if len(directionList) > 0:
+                rank_new_el["score"] = get_direction_rank(rank_new_el["dir"], directionList[-1])  
+            else:
+                rank_new_el["score"] = 9
+
+            # add the element to the ranking 
+            ranking.append(rank_new_el)
+            
+            
+        #####################
+        ##
+        ## TEST CODE END
+        ##
+        #####################
+        
+        
+        # next_el_coords = coords_list[0]
+        
+        # instead of extracting the first element, let's choose by rank
+        max_element = max(ranking, key=lambda x: x["score"])
+        next_el_coords = max_element["coords"]
+        
+        fullprint("find_next_through_classic_direction", "Ranking %s" % (ranking), logFile)
+        fullprint("find_next_through_classic_direction", "--> Selected: %s" % max_element, logFile)
+
+        next_el_value = value
+        fullprint("find_next_through_classic_direction", "Candidate to be next element has value %s and coords %s" % (value, next_el_coords), logFile)
+        
+        # get the direction of this element
+        local_next_el_coords = [next_el_coords[0] - window_size//2, next_el_coords[1] - window_size // 2]
+        d = get_direction_str(local_next_el_coords)    
+        
+        # now check if the direction is compatible with the current path
+        if checkDir:
+                
+            if not d in dirs:
+                if len(directionList) > 0:
+                    fullprint("find_next_through_classic_direction", "Direction %s IS NOT ok! Last was %s [last 5: %s] -- Modifying matrix..." % (d, directionList[-1], dirs), logFile)
+                else:
+                    fullprint("find_next_through_classic_direction", "Direction %s IS NOT ok! Last was None -- Modifying matrix..." % d, logFile)
+                
+                matrix[next_el_coords[0], next_el_coords[1]] = np.nan
+                fullprint_matrix("find_next_through_classic_direction", matrix, logFile)
+                if matrix.isnull().all():
+                    matrix = orig_matrix.copy()
+                    checkDir = False
+                    
+            else:
+                if len(directionList) > 0:
+                    fullprint("find_next_through_classic_direction", "Direction %s ok (last was %s)! -- [Last 5: %s]" % (d, directionList[-1], dirs), logFile)
+                else:
+                    fullprint("find_next_through_classic_direction", "Direction %s ok (last was None)!" % d, logFile)
+                break
+            
+        else:
+            break
+
+    fullprint("find_next_through_classic_direction", "Selected element is %s with value %s" % (next_el_coords, next_el_value), logFile)
+
     # NOTE:
     # for the moment we just use the first element (we say it again)
-    (min_lat_rel, min_lon_rel) = coords_list[0]
-    
+    # (min_lat_rel, min_lon_rel) = coords_list[0]
+    (min_lat_rel, min_lon_rel) = max_element["coords"]
     
     # get the global index of the new element
     local_lat_coords = range(0 - halfsize, 0 + halfsize + 1)
@@ -360,7 +442,7 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, last_
     depth = get_depth(ds, (shifted_lat, shifted_lon))
     
     # return
-    return depth, coords
+    return depth, coords, d
 
         
 #########################################################
@@ -386,26 +468,27 @@ def get_max_index(matrix):
         the depth value for that points
     """
         
+    # make a copy of the matrix, in order to round the decimal part
+    rounded_matrix = np.round(matrix, decimals=2)
+    
     # get the maximum
-    maxValue = np.nanmax(matrix)
+    maxValue = np.nanmax(rounded_matrix)
+    
+    # create a mask with all the values that are close to the maximum (using a tolerance threshold)
+    tolerance = 0.1
+    mask = np.abs(rounded_matrix - maxValue) <= tolerance
+    row_indices, col_indices = np.where(mask)
+    indices_of_non_nan = list(zip(row_indices, col_indices))
     
     # find the cells having that value
     if np.isnan(maxValue):
-        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& QUI ")
-
         coords = np.argwhere(np.isnan(maxValue))
     else:
-        
-        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& QUA")
+        coords = np.argwhere(rounded_matrix.values == maxValue)    
 
-        coords = np.argwhere(matrix.values == maxValue)
-
-    # print("[get_max_index] === Returning %s, %s" % (coords, matrix[coords].values))
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-    print(coords)
-    print(maxValue)
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-    return coords, maxValue
+    # return
+    # return coords, maxValue
+    return indices_of_non_nan, maxValue
 
 
 #########################################################
