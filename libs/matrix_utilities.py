@@ -331,8 +331,11 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
     
         # find the cells with the maximum value (mind the plural!!!)
         # (min_lat_rel, min_lon_rel), value = get_max_index(matrix)
-        coords_list, value = get_max_index(matrix)
-    
+        if len(directionList) > 10: # if we made the initialization
+            coords_list, value = get_max_index(matrix, tolerance=0.1)
+        else:
+            coords_list, value = get_max_index(matrix, tolerance=0)
+            
         # get the list of acceptable directions
         if len(directionList) > 0:
             dirs = get_acceptable_dir(directionList[-1])
@@ -343,17 +346,13 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
         if np.isnan(value):
             fullprint("find_next_through_classic_direction", "Next element is NONE", logFile)
             return None, None
-        
-        # for the moment let's stick on the first
-        
-        #####################
-        ##
-        ## TEST CODE START
-        ##
-        #####################
-        
-        # let's try to rank the points
-        
+
+        # calculate trend to add it to the rank
+        if len(directionList) > 10:
+            trend = get_trend(directionList)
+            dirs = get_acceptable_dir_by_trend(trend)
+
+        # let's try to rank the points        
         ranking = []
         for p in coords_list:
             rank_new_el = {}
@@ -368,24 +367,17 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
                 rank_new_el["score"] = get_direction_rank(rank_new_el["dir"], directionList[-1])  
             else:
                 rank_new_el["score"] = 9
-
+            
             # add the element to the ranking 
             ranking.append(rank_new_el)
             
+            if rank_new_el["dir"] in dirs:
+                rank_new_el["score"] += 10
+
             
-        #####################
-        ##
-        ## TEST CODE END
-        ##
-        #####################
-        
-        
-        # next_el_coords = coords_list[0]
-        
         # instead of extracting the first element, let's choose by rank
         max_element = max(ranking, key=lambda x: x["score"])
         next_el_coords = max_element["coords"]
-        
         fullprint("find_next_through_classic_direction", "Ranking %s" % (ranking), logFile)
         fullprint("find_next_through_classic_direction", "--> Selected: %s" % max_element, logFile)
 
@@ -416,10 +408,30 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
                     fullprint("find_next_through_classic_direction", "Direction %s ok (last was %s)! -- [Last 5: %s]" % (d, directionList[-1], dirs), logFile)
                 else:
                     fullprint("find_next_through_classic_direction", "Direction %s ok (last was None)!" % d, logFile)
+            
+            
+                if len(directionList) > 10:
+
+                    # now check if it is compatible with the trend
+                    trend = get_trend(directionList)
+                    dirs = get_acceptable_dir_by_trend(trend)
+                    if not d in dirs:
+                        fullprint("find_next_through_classic_direction", "Direction %s IS NOT ok with the trend %s -- Modifying matrix..." % (d, dirs), logFile)
+                        
+                        # matrix[next_el_coords[0], next_el_coords[1]] = np.nan
+                        # fullprint_matrix("find_next_through_classic_direction", matrix, logFile)
+                        # if matrix.isnull().all():
+                        #     matrix = orig_matrix.copy()
+                        #     checkDir = False
+                            
+                    else:
+                        fullprint("find_next_through_classic_direction", "Direction %s is ok with the trend %s" % (d, dirs), logFile)
+                
                 break
             
         else:
             break
+
 
     fullprint("find_next_through_classic_direction", "Selected element is %s with value %s" % (next_el_coords, next_el_value), logFile)
 
@@ -451,7 +463,7 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
 #
 #########################################################
 
-def get_max_index(matrix):
+def get_max_index(matrix, tolerance):
 
     """Return the index of the minimum bathymetry in the matrix.
 
@@ -459,7 +471,9 @@ def get_max_index(matrix):
     ----------
     matrix: np.matrix
         The 3x3 matrix where to look for the maximum
-
+    tolerance: float
+        The tolerance.. Set 0 to disable it
+            
     Returns
     -------
     list
@@ -475,7 +489,6 @@ def get_max_index(matrix):
     maxValue = np.nanmax(rounded_matrix)
     
     # create a mask with all the values that are close to the maximum (using a tolerance threshold)
-    tolerance = 0.1
     mask = np.abs(rounded_matrix - maxValue) <= tolerance
     row_indices, col_indices = np.where(mask)
     indices_of_non_nan = list(zip(row_indices, col_indices))

@@ -10,6 +10,7 @@ import pdb
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from scipy import interpolate
+from collections import Counter
 
 # local reqs
 from libs.print_utilities import *
@@ -69,13 +70,13 @@ def get_direction_str(shift_coords):
 #
 #########################################################
 
-def get_acceptable_dir(dir):
+def get_acceptable_dir(direc):
     
     """Identifies the direction of the next movement
     
     Parameters
     ----------
-    dir: string
+    direc: string
         a string among "NE", "N", "NW", "E", "W", "SE", "S", "SW"
     
     Returns
@@ -84,36 +85,33 @@ def get_acceptable_dir(dir):
         a list of the acceptable directions
     """
     
-    if dir == "N":
+    if direc == "N":
         return ["W", "NW", "N", "NE", "E"]
         # return ["NW", "N", "NE"]
-    elif dir == "NE":
+    elif direc == "NE":
         return ["NW", "N", "NE", "E", "SE"]
         # return ["N", "NE", "E"]
-    elif dir == "E":
+    elif direc == "E":
         return ["N", "NE", "E", "SE", "S"]
         # return ["NE", "E", "SE"]
-    elif dir == "SE":
+    elif direc == "SE":
         return ["NE", "E", "SE", "S", "SW"]
         # return ["E", "SE", "S"]
-    if dir == "S":
+    if direc == "S":
         return ["E", "SE", "S", "SW", "W"]
         # return ["SE", "S", "SW"]
-    elif dir == "SW":
+    elif direc == "SW":
         return ["SE", "S", "SW", "W", "NW"]
         # return ["S", "SW", "W"]
-    elif dir == "W":
+    elif direc == "W":
         return ["S", "SW", "W", "NW", "N"]
         # return ["W", "SW", "S"]
-    elif dir == "NW":
+    elif direc == "NW":
         return ["SW", "W", "NW", "N", "NE"]
         # return ["W", "NW", "N"]
     else:
         raise InvalidZonalDirectionException()
         sys.exit(100)
-        
-    # return
-    return dirString
 
 
 #########################################################
@@ -168,3 +166,98 @@ def get_direction_rank(dir, lastdir):
         
     # return
     return scores[dir]
+
+
+
+#########################################################
+#
+# get_trend
+#
+#########################################################
+
+def get_trend(directionList):
+    
+    """Identifies the trend of the direction
+    
+    Parameters
+    ----------
+    directionList: list
+        list of all the directions (strings among "NE", "N", "NW", "E", "W", "SE", "S", "SW")
+        
+    Returns
+    -------
+    str
+        a string direction telling the trend
+    """
+ 
+    # get the last 10 directions
+    if len(directionList) < 10:
+        workList = directionList
+    else:   
+        workList = directionList[-10:]
+
+    # split directions (e.g. SW -> S, W)
+    workList_split = [char for string in workList for char in string]
+        
+    # get the most common element in unsplitted list
+    string_counts = Counter(workList)
+    most_common_strings_u = string_counts.most_common()
+    most_common_string_u = most_common_strings_u[0][0]
+
+    # get the most common element in splitted list
+    string_counts = Counter(workList_split)
+    most_common_strings = string_counts.most_common()
+    most_common_string = most_common_strings[0][0]
+
+    # the trend is:
+    return most_common_string_u
+
+
+#########################################################
+#
+# get_acceptable_dir_by_trend
+#
+#########################################################
+
+def get_acceptable_dir_by_trend(trend):
+    
+    """Identifies the direction of the next movement
+    
+    Parameters
+    ----------
+    dir: string
+        a string among "NE", "N", "NW", "E", "W", "SE", "S", "SW"
+    
+    Returns
+    -------
+    list
+        a list of the acceptable directions
+    """
+    
+    if trend == "N":
+        # return ["W", "NW", "N", "NE", "E"]
+        return ["NW", "N", "NE"]
+    elif trend == "NE":
+        # return ["NW", "N", "NE", "E", "SE"]
+        return ["N", "NE", "E"]
+    elif trend == "E":
+        # return ["N", "NE", "E", "SE", "S"]
+        return ["NE", "E", "SE"]
+    elif trend == "SE":
+        # return ["NE", "E", "SE", "S", "SW"]
+        return ["E", "SE", "S"]
+    if trend == "S":
+        # return ["E", "SE", "S", "SW", "W"]
+        return ["SE", "S", "SW"]
+    elif trend == "SW":
+        # return ["SE", "S", "SW", "W", "NW"]
+        return ["S", "SW", "W"]
+    elif trend == "W":
+        # return ["S", "SW", "W", "NW", "N"]
+        return ["W", "SW", "S"]
+    elif trend == "NW":
+        # return ["SW", "W", "NW", "N", "NE"]
+        return ["W", "NW", "N"]
+    else:
+        raise InvalidZonalDirectionException()
+        sys.exit(100)

@@ -199,6 +199,8 @@ if __name__ == "__main__":
         
         # ready for next iteration!
         fullprint("__main__", "New matrix will be centered on %s,%s with depth %s" % (lat_idx, lon_idx, depth), logFile)
+        if iterat > 10:
+            fullprint("__main__", "TREND IS %s --- (%s)" % (get_trend(directionList), directionList[-10:]), logFile)
 
         
     #######################################################################
