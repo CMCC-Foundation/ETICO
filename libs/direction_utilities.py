@@ -40,14 +40,12 @@ def get_direction_str(shift_coords):
     medianIndex = 0
     
     # check the lat
-    print("comparing %s with %s" % (shift_coords[0], medianIndex))
     if shift_coords[0] < medianIndex:
         dirString = "S"
     elif shift_coords[0] > medianIndex:
         dirString = "N"
     
     # check the lon
-    print("comparing %s with %s" % (shift_coords[1], medianIndex))
     if shift_coords[1] > medianIndex:
         dirString = "%sE" % dirString
     elif shift_coords[1] < medianIndex:

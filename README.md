@@ -87,6 +87,7 @@ The script fails with an **error code** that should help the user to discover wh
 52. Incomplete configuration file. Missing `BaselinePlotName` in section `Output`
 53. Incomplete configuration file. Missing `LogFile` in section `Output`
 54. Incomplete configuration file. Missing `OutputDirectory` in section `Output`
+55. Incomplete configuration file. Missing `ThalwegFile` in section `Output`
 
 ### Errors 6* -- Section "Debug" in config file
 60. Incomplete configuration file. Missing section `Debug`

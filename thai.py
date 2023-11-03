@@ -4,6 +4,7 @@
 import xarray as xr
 import numpy as np
 import sys
+import csv
 
 # local requirements
 from libs.direction_utilities import *
@@ -212,6 +213,15 @@ if __name__ == "__main__":
     for d in directionList:        
         fullprint("__main__", "%s) - %s [%s] -- DIRECTION %s" % (counter, thalweg[counter], thalweg_depth[counter], d), logFile)
         counter += 1
+
+    # print the thalweg as a sequence of lat,lon couples
+    thalwegFilePath = os.path.join(configDict["outputDirectory"], configDict["thalwegFile"])
+    thalwegFile = open(thalwegFilePath, "w")
+    
+    with open(thalwegFilePath, "w") as csvfile:
+        csvwriter = csv.writer(csvfile)
+        for t in thalweg:
+            csvwriter.writerow([float(ds.lat[t[0]]), float(ds.lon[t[1]])])
 
 
     #######################################################################

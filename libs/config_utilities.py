@@ -282,7 +282,6 @@ def read_output_section(config, configDict):
         raise IncompleteConfigFileError("Missing 'LogFile' option in 'Output' section of configuration file!")
         sys.exit(53)
 
-
     # read the name of the log file
     try:
         configDict["outputDirectory"] = config.get("Output", "OutputDirectory")
@@ -292,6 +291,16 @@ def read_output_section(config, configDict):
     except NoOptionError:
         raise IncompleteConfigFileError("Missing 'OutputDirectory' option in 'Output' section of configuration file!")
         sys.exit(54)
+        
+    # read the name of the thalweg file
+    try:
+        configDict["thalwegFile"] = config.get("Output", "ThalwegFile")
+    except NoSectionError:
+        raise IncompleteConfigFileError("Missing 'Output' section of configuration file!")
+        sys.exit(50)
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'ThalwegFile' option in 'Output' section of configuration file!")
+        sys.exit(55)
         
         
 def read_debug_section(config, configDict):
