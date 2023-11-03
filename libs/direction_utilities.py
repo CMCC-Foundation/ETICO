@@ -2,6 +2,7 @@
 
 # global reqs
 import sys
+import pdb
 from collections import Counter
 
 # local reqs
@@ -180,6 +181,8 @@ def get_trend(directionList):
     -------
     str
         a string direction telling the trend
+    dict
+        a complex data structure summarising all the information on directions
     """
  
     # get the last 10 directions
@@ -188,21 +191,60 @@ def get_trend(directionList):
     else:   
         workList = directionList[-10:]
 
-    # split directions (e.g. SW -> S, W)
-    workList_split = [char for string in workList for char in string]
-        
     # get the most common element in unsplitted list
-    string_counts = Counter(workList)
-    most_common_strings_u = string_counts.most_common()
-    most_common_string_u = most_common_strings_u[0][0]
+    directionCount = Counter(workList)
+    mostCommonDirections = directionCount.most_common()
+    mostCommonDirection = mostCommonDirections[0][0]
 
+    # now remove the "simple" directions and split the "complex" ones
+    workList_split = []
+    for string in workList:
+        if len(string) > 1:
+            for char in string:
+                workList_split.append(char)
+        
     # get the most common element in splitted list
-    string_counts = Counter(workList_split)
-    most_common_strings = string_counts.most_common()
-    most_common_string = most_common_strings[0][0]
+    directionCountSplit = Counter(workList_split)
+    mostCommonDirectionsSplit = directionCountSplit.most_common()
+    # mostCommonDirectionSplit = mostCommonDirectionsSplit[0][0]
 
+    # convert both the lists to dicts
+    mostCommonDirectionsDict = {key: value for key, value in mostCommonDirections}
+    mostCommonDirectionsSplitDict = {key: value for key, value in mostCommonDirectionsSplit}
+
+    # now sum the components of the second list to the first one (multiplied by 0.5)
+    for el in mostCommonDirectionsSplitDict.keys():
+        if el in mostCommonDirectionsDict.keys():
+            mostCommonDirectionsDict[el] += 0.5 * mostCommonDirectionsSplitDict[el]
+        else:
+            mostCommonDirectionsDict[el] = 0.5 * mostCommonDirectionsSplitDict[el]
+                        
     # the trend is:
-    return most_common_string_u
+    return mostCommonDirection, mostCommonDirectionsDict
+
+
+
+    # # get the last 10 directions
+    # if len(directionList) < 10:
+    #     workList = directionList
+    # else:   
+    #     workList = directionList[-10:]
+
+    # # split directions (e.g. SW -> S, W)
+    # workList_split = [char for string in workList for char in string]
+        
+    # # get the most common element in unsplitted list
+    # string_counts = Counter(workList)
+    # most_common_strings_u = string_counts.most_common()
+    # most_common_string_u = most_common_strings_u[0][0]
+
+    # # get the most common element in splitted list
+    # string_counts = Counter(workList_split)
+    # most_common_strings = string_counts.most_common()
+    # most_common_string = most_common_strings[0][0]
+
+    # # the trend is:
+    # return most_common_string_u
 
 
 #########################################################
@@ -238,7 +280,7 @@ def get_acceptable_dir_by_trend(trend):
     elif trend == "SE":
         # return ["NE", "E", "SE", "S", "SW"]
         return ["E", "SE", "S"]
-    if trend == "S":
+    elif trend == "S":
         # return ["E", "SE", "S", "SW", "W"]
         return ["SE", "S", "SW"]
     elif trend == "SW":
@@ -253,3 +295,68 @@ def get_acceptable_dir_by_trend(trend):
     else:
         raise InvalidZonalDirectionException()
         sys.exit(101)
+
+
+#########################################################
+#
+# get_acceptable_dir_by_trend
+#
+#########################################################
+
+def get_acceptable_dir_by_complex_trend(trend):
+    
+    """Identifies the direction of the next movement
+    
+    Parameters
+    ----------
+    dir: string
+        a string among "NE", "N", "NW", "E", "W", "SE", "S", "SW"
+    
+    Returns
+    -------
+    list
+        a list of the acceptable directions
+    """
+    
+    # get the two most-rated directions of the trend
+    trendDirsFull = sorted(trend.items(),key=lambda x: x[1], reverse=True)[0:2]
+    trendDirs = []
+    trendDirs.append(trendDirsFull[0][0])
+    if len(trendDirsFull) > 1:
+        if trendDirsFull[0][1] - trendDirsFull[1][1] < 1:
+            trendDirs.append(trendDirsFull[1][0])
+    
+    # initialise a list for allowed directions
+    directions = []
+    
+    # loop over the two most-rated directions of the trend
+    for trend in trendDirs:
+        if trend == "N":
+            for x in ["NW", "N", "NE"]:
+                directions.append(x)
+        elif trend == "NE":
+            for x in ["N", "NE", "E"]:
+                directions.append(x)
+        elif trend == "E":
+            for x in ["NE", "E", "SE"]:
+                directions.append(x)
+        elif trend == "SE":
+            for x in ["E", "SE", "S"]:
+                directions.append(x)
+        elif trend == "S":
+            for x in ["SE", "S", "SW"]:
+                directions.append(x)
+        elif trend == "SW":
+            for x in ["S", "SW", "W"]:
+                directions.append(x)
+        elif trend == "W":
+            for x in ["W", "SW", "S"]:
+                directions.append(x)
+        elif trend == "NW":
+            for x in ["W", "NW", "N"]:
+                directions.append(x)
+        else:
+            raise InvalidZonalDirectionException()
+            sys.exit(101)
+            
+    return directions

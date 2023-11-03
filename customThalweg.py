@@ -126,7 +126,7 @@ if __name__ == "__main__":
         # save the point in thalweg
         thalweg.append((int(lat_idx), int(lon_idx)))
         thalweg_depth.append(depth)
-        fullprint("__main__", "Adding to the thalweg %s, %s (depth %s)" % (int(lat_idx), int(lon_idx), depth), logFile)
+        fullprint("__main__", " * Adding to the thalweg %s, %s (depth %s)... Let's look at his neighborhood..." % (int(lat_idx), int(lon_idx), depth), logFile)
 
         # mark the current cell as visited
         visited.append((int(lat_idx), int(lon_idx)))

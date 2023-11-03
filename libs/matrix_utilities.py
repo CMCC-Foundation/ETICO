@@ -323,7 +323,7 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
     halfsize = window_size // 2
 
     # debug print
-    fullprint("find_next_through_classic_direction", "The extracted matrix is:", logFile)
+    fullprint("find_next_through_classic_direction", " * The extracted matrix is:", logFile)
     fullprint_matrix("find_next_through_classic_direction", matrix, logFile)
     
     checkDir = True
@@ -344,14 +344,16 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
 
         # check if the max value in the cell is NaN
         if np.isnan(value):
-            fullprint("find_next_through_classic_direction", "Next element is NONE", logFile)
-            return None, None
+            fullprint("find_next_through_classic_direction", "------------> Next element is NONE", logFile)
+            return None, [None, None], None
 
         # calculate trend to add it to the rank
         if len(directionList) > 10:
-            trend = get_trend(directionList)
-            dirs = get_acceptable_dir_by_trend(trend)
-
+            trend, complex_trend = get_trend(directionList)
+            dirs = get_acceptable_dir_by_complex_trend(complex_trend)
+        else:
+            trend = None
+            
         # let's try to rank the points        
         ranking = []
         for p in coords_list:
@@ -376,13 +378,20 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
 
             
         # instead of extracting the first element, let's choose by rank
-        max_element = max(ranking, key=lambda x: x["score"])
+        try:
+            max_element = max(ranking, key=lambda x: x["score"])
+        except ValueError:
+            fullprint("find_next_through_classic_direction", "SIAMO NEL VALUEERROR", logFile)
+            return None, [None, None], None
+            
+        # select the potential next element
         next_el_coords = max_element["coords"]
-        fullprint("find_next_through_classic_direction", "Ranking %s" % (ranking), logFile)
-        fullprint("find_next_through_classic_direction", "--> Selected: %s" % max_element, logFile)
-
+        fullprint("find_next_through_classic_direction", " * Ranking:", logFile)
+        for k in ranking:
+            fullprint("find_next_through_classic_direction", " ---> %s" % k, logFile)
+        fullprint("find_next_through_classic_direction", " * Selected, based on ranking: %s" % max_element, logFile)
         next_el_value = value
-        fullprint("find_next_through_classic_direction", "Candidate to be next element has value %s and coords %s" % (value, next_el_coords), logFile)
+        fullprint("find_next_through_classic_direction", " * The candidate has value %s and coords %s" % (value, next_el_coords), logFile)
         
         # get the direction of this element
         local_next_el_coords = [next_el_coords[0] - window_size//2, next_el_coords[1] - window_size // 2]
@@ -391,11 +400,17 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
         # now check if the direction is compatible with the current path
         if checkDir:
                 
+            fullprint("find_next_through_classic_direction", " * Checking direction:", logFile)
+            if trend:
+                fullprint("find_next_through_classic_direction", " ---> Trend is: %s" % trend, logFile)
+                fullprint("find_next_through_classic_direction", " ---> Complex Trend is: %s" % complex_trend, logFile)
+                fullprint("find_next_through_classic_direction", " ---> Allowed dirs based on Complex Trend are: %s" % dirs, logFile)
+
             if not d in dirs:
                 if len(directionList) > 0:
-                    fullprint("find_next_through_classic_direction", "Direction %s IS NOT ok! Last was %s [last 5: %s] -- Modifying matrix..." % (d, directionList[-1], dirs), logFile)
+                    fullprint("find_next_through_classic_direction", " ---> Direction %s IS NOT ok! Last was %s [last 10: %s] -- Modifying matrix..." % (d, directionList[-1], directionList[-10:]), logFile)
                 else:
-                    fullprint("find_next_through_classic_direction", "Direction %s IS NOT ok! Last was None -- Modifying matrix..." % d, logFile)
+                    fullprint("find_next_through_classic_direction", " ---> Direction %s IS NOT ok! Last was None -- Modifying matrix..." % d, logFile)
                 
                 matrix[next_el_coords[0], next_el_coords[1]] = np.nan
                 fullprint_matrix("find_next_through_classic_direction", matrix, logFile)
@@ -405,16 +420,16 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
                     
             else:
                 if len(directionList) > 0:
-                    fullprint("find_next_through_classic_direction", "Direction %s ok (last was %s)! -- [Last 5: %s]" % (d, directionList[-1], dirs), logFile)
+                    fullprint("find_next_through_classic_direction", " ---> Direction %s ok (last was %s)! -- [Last 10: %s]" % (d, directionList[-1], directionList[-10:]), logFile)
                 else:
-                    fullprint("find_next_through_classic_direction", "Direction %s ok (last was None)!" % d, logFile)
+                    fullprint("find_next_through_classic_direction", " ---> Direction %s ok (last was None)!" % d, logFile)
                 break
             
         else:
             break
 
 
-    fullprint("find_next_through_classic_direction", "Selected element is %s with value %s" % (next_el_coords, next_el_value), logFile)
+    fullprint("find_next_through_classic_direction", " * Selected element is %s with value %s" % (next_el_coords, next_el_value), logFile)
 
     # NOTE:
     # for the moment we just use the first element (we say it again)
