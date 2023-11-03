@@ -104,8 +104,5 @@ The script fails with an **error code** that should help the user to discover wh
 
 
 ## Next steps
-1. Implementation of automatic identification of starting point
-2. Implementation of window enlargement on stopping criteria
-3. Adding configuration file for plots
-4. Support >9 windows
-5. Add an export to NetCDF or other formats
+1. Switch to logging module
+2. Increase the test cases
