@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
 
 # global reqs
-from termcolor import colored
-import matplotlib.pyplot as plt
 import xarray as xr
 import numpy as np
 import sys
-import pdb
-import traceback
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-from scipy import interpolate
-from configparser import *
 
 # local requirements
 from libs.direction_utilities import *
@@ -23,14 +15,6 @@ from libs.print_utilities import *
 from libs.plot_utilities import *
 from libs.exceptions import *
 
-# set the starting point
-st_lat = 44.933
-st_lon = 12.159
-
-# set the end point
-en_lat = 44.928
-en_lon = 12.233
-
 
 #########################################################
 #
@@ -40,21 +24,43 @@ en_lon = 12.233
 
 if __name__ == "__main__":
     
+    #######################################################################
+    #
+    # PARSE COMMAND LINE
+    #
+    #######################################################################
+    
     # Read the name of the NetCDF file
     try:
         filename = sys.argv[1]
         configFile = sys.argv[2]
     except IndexError:
         fullprint("__main__", "Not enough parameters! Please provide bathymetry file and config file.", error=True)
-        sys.exit(1)
+        sys.exit(100)   
+    
+    
+    #######################################################################
+    #
+    # READ CONFIG
+    #
+    #######################################################################
+    
+    # create a parser and parse the file    
+    configDict = read_config(configFile)   
+    
+    #######################################################################
+    #
+    # INITIALIZATION
+    #
+    #######################################################################
     
     # Open the NetCDF file
     fullprint("__main__", "Opening file %s" % filename)
     ds = xr.open_dataset(filename)
     
     # Identify the indices of the point that is closest to the given lat and lon
-    lat_given = st_lat
-    lon_given = st_lon
+    lat_given = configDict["startLat"]
+    lon_given = configDict["startLon"]
     lat_idx = abs(ds.lat - lat_given).argmin().values
     lon_idx = abs(ds.lon - lon_given).argmin().values
 
@@ -75,16 +81,6 @@ if __name__ == "__main__":
     # Start an 'endless' loop
     iterat = 0
     
-    
-    #######################################################################
-    #
-    # READ CONFIG
-    #
-    #######################################################################
-    
-    # create a parser and parse the file    
-    configDict = read_config(configFile)
-    
      
     #######################################################################
     #
@@ -95,6 +91,8 @@ if __name__ == "__main__":
     if "logFile" in configDict and "outputDirectory" in configDict:
         logFilePath = os.path.join(configDict["outputDirectory"], configDict["logFile"])
         logFile = open(logFilePath, "w")
+    else:
+        logFile = None
     
     
     #######################################################################
@@ -107,7 +105,7 @@ if __name__ == "__main__":
     baseline = find_baseline(ds)
 
     # plot the baseline    
-    plot_baseline(baseline, ds, configDict)
+    plot_baseline(baseline, ds, configDict, logFile)
 
 
     #######################################################################
@@ -165,7 +163,7 @@ if __name__ == "__main__":
             
             # we should never get here, since we parse the config file
             raise UnsupportedMaxSearchAlgoError()
-            sys.exit(5)
+            sys.exit(27)
                         
         # check the identified maximum value
         try:
@@ -208,17 +206,6 @@ if __name__ == "__main__":
     # RECAP
     #
     #######################################################################
-    
-    # fullprint("__main__", "================ THE END ================", logFile)
-    # fullprint("__main__", "Our thalweg is:", logFile)
-    # for p in range(len(thalweg)):
-    #     fullprint("__main__", "%s) - %s [%s]" % (p, thalweg[p], thalweg_depth[p]), logFile)
-
-    # counter = 0
-    # fullprint("__main__", "The log of directions is:", logFile)
-    # for d in directionList:        
-    #     fullprint("__main__", "%s -- %s" % (counter, d), logFile)
-    #     counter += 1
 
     counter = 0
     fullprint("__main__", "The log of directions is:", logFile)
@@ -234,7 +221,8 @@ if __name__ == "__main__":
     #######################################################################
 
     # invoke the plot function
-    plot(ods, thalweg, thalweg_depth, configDict)
+    plot(ods, thalweg, thalweg_depth, configDict, logFile)
+
 
     #######################################################################
     #

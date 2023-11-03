@@ -408,25 +408,6 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
                     fullprint("find_next_through_classic_direction", "Direction %s ok (last was %s)! -- [Last 5: %s]" % (d, directionList[-1], dirs), logFile)
                 else:
                     fullprint("find_next_through_classic_direction", "Direction %s ok (last was None)!" % d, logFile)
-            
-            
-                if len(directionList) > 10:
-
-                    # now check if it is compatible with the trend
-                    trend = get_trend(directionList)
-                    dirs = get_acceptable_dir_by_trend(trend)
-                    if not d in dirs:
-                        fullprint("find_next_through_classic_direction", "Direction %s IS NOT ok with the trend %s -- Modifying matrix..." % (d, dirs), logFile)
-                        
-                        # matrix[next_el_coords[0], next_el_coords[1]] = np.nan
-                        # fullprint_matrix("find_next_through_classic_direction", matrix, logFile)
-                        # if matrix.isnull().all():
-                        #     matrix = orig_matrix.copy()
-                        #     checkDir = False
-                            
-                    else:
-                        fullprint("find_next_through_classic_direction", "Direction %s is ok with the trend %s" % (d, dirs), logFile)
-                
                 break
             
         else:

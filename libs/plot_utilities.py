@@ -3,14 +3,10 @@
 # global reqs
 from termcolor import colored
 import matplotlib.pyplot as plt
-import xarray as xr
 import numpy as np
 import os
-import sys
-import pdb
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-from scipy import interpolate
 
 # local requirements
 from libs.matrix_utilities import *
@@ -23,7 +19,7 @@ from libs.print_utilities import *
 #
 #########################################################
 
-def plot_baseline(baseline, ds, configDict):
+def plot_baseline(baseline, ds, configDict, logFile):
     
     """A function to plot the baseline on a file
     
@@ -35,15 +31,14 @@ def plot_baseline(baseline, ds, configDict):
         the original dataset
     configDict: dict
         a dictionary holding the whole configuration
+    logFile: fileDescriptor
+        a file descriptor for the log file
         
     Returns
     -------
     Nothing
     
     """
-
-    # debug print
-    print(colored("libs::plot_utilities::plot_baseline", "blue", attrs=["bold"]) + " --- Plot starting...")
 
     # Extract the bathy variable
     lat = ds['lat']
@@ -77,7 +72,7 @@ def plot_baseline(baseline, ds, configDict):
     
     # Save the plot to file
     outputFile = os.path.join(configDict["plotDirectory"], configDict["baselinePlotName"])
-    print(colored("libs::plot_utilities::plot_baseline", "blue", attrs=["bold"]) + " --- Saving baseline plot to %s" % outputFile)
+    fullprint("plot_baseline", "Saving baseline plot to %s" % outputFile, logFile)
     plt.savefig(outputFile)
 
 
@@ -87,7 +82,7 @@ def plot_baseline(baseline, ds, configDict):
 #
 #########################################################
 
-def plot(ds, thalweg, thalweg_depth, configDict):
+def plot(ds, thalweg, thalweg_depth, configDict, logFile):
     
     """A function to plot the thalweg
     
@@ -107,8 +102,6 @@ def plot(ds, thalweg, thalweg_depth, configDict):
     Nothing
     
     """
-
-    print(colored("libs::plot_utilities::plot", "blue", attrs=["bold"]) + " --- Plot starting...")
 
     # # bounding box
     # min_lat = 44.92
@@ -141,15 +134,8 @@ def plot(ds, thalweg, thalweg_depth, configDict):
     # Add gridlines    
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
                       linewidth=0.1, color='gray', alpha=0.5, linestyle='--')
-    # gl.xlabels_top = False
-    # gl.ylabels_left = True
-    # gl.ylabels_right = False
-    # gl.xlabel_style = {'size': 5}
-    # gl.ylabel_style = {'size': 5}
-    
-    # custom_x_ticks = [1.5, 3.5]  # Replace with your custom x-axis tick positions
-    # custom_y_ticks = [15, 25]    # Replace with your custom y-axis tick positions
 
+    # Add ticks
     ax.set_xticks(np.linspace(min_lon, max_lon, num=5))
     for t in ax.get_xticklabels():
         t.set_fontsize(5)  
@@ -157,9 +143,7 @@ def plot(ds, thalweg, thalweg_depth, configDict):
     ax.set_yticks(np.linspace(min_lat, max_lat, num=5))
     for t in ax.get_yticklabels():
         t.set_fontsize(5)  
-    
-    # # ax.set_yticks(custom_y_ticks)
-    
+        
     # Set the limits for the x-axis and y-axis to zoom to the specified area
     ax.set_xlim(min_lon, max_lon)
     ax.set_ylim(min_lat, max_lat)
@@ -220,11 +204,11 @@ def plot(ds, thalweg, thalweg_depth, configDict):
             
             # save the figure for the current step
             if configDict["plotSteps"]:                
-                print("Generating image output_%s.png" % str(counter).zfill(4))
+                fullprint("plot", "Generating image output_%s.png" % str(counter).zfill(4), logFile)
                 filename = os.path.join(configDict["plotDirectory"], "output_%s.png" % str(counter).zfill(4))
                 plt.savefig(filename)
 
     # Show the plot
     plt.show()
 
-    print(colored("libs::plot_utilities::plot", "blue", attrs=["bold"]) + " --- Generation of plot complete.")
+    fullprint("plot", "Generation of plot complete.", logFile)

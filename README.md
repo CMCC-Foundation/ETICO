@@ -57,28 +57,47 @@ If you want to investigate the code, or implement your changes, the following in
 The script fails with an **error code** that should help the user to discover what's wrong:
 
 1. Not enough parameters. You need to provide the bathymetry file and the configuration file
-2. Incomplete configuration file. Missing `MaxSearchAlgo` in section `Algorithm`
-3. Incomplete configuration file. Missing section `Algorithm`
-4. Incomplete configuration file. Missing `WindowSize` in section `Algorithm`
-5. Wrong setting in configuration file. `MaxSearchAlgo` can only be `Zonal` or `Classic`
-6. Incomplete configuration file. Missing section `Plot`
-7. Incomplete configuration file. Missing `PointSparsity` in section `Plot`
-8. Incomplete configuration file. Missing `PointsEnabled` in section `Plot`
-9. Incomplete configuration file. Missing `LablesEnabled` in section `Plot`
-10. Incomplete configuration file. Missing `PointsSize` in section `Plot`
-11. Incomplete configuration file. Missing `LabelsSize` in section `Plot`
-12. Incomplete configuration file. Missing section `Output`
-13. Incomplete configuration file. Missing `PlotDirectory` in section `Output`
-14. Incomplete configuration file. Missing `BaselinePlotName` in section `Output`
-15. Incomplete configuration file. Missing `LogFile` in section `Output`
-16. Incomplete configuration file. Missing `PlotStartPoint` in section `Debug`
-17. Incomplete configuration file. Missing `PlotEndPoint` in section `Debug`
-19. Incomplete configuration file. Missing `LatMin` in section `Plot`
-20. Incomplete configuration file. Missing `LatMax` in section `Plot`
-21. Incomplete configuration file. Missing `LonMin` in section `Plot`
-22. Incomplete configuration file. Missing `LonMax` in section `Plot`
-23. Incomplete configuration file. Missing `PlotSteps` in section `Plot`
-100. Invalid zonal direction detected.
+
+### Errors 2* -- Section "Algorithm" in config file
+20. Incomplete configuration file. Missing section `Algorithm`
+21. Incomplete configuration file. Missing `MaxSearchAlgo` in section `Algorithm`
+22. Incomplete configuration file. Missing `WindowSize` in section `Algorithm`
+23. Incomplete configuration file. Missing `StartLat` in section `Algorithm`
+24. Incomplete configuration file. Missing `StartLon` in section `Algorithm`
+25. Incomplete configuration file. Missing `EndLat` in section `Algorithm`
+26. Incomplete configuration file. Missing `EndLon` in section `Algorithm`
+27. Wrong setting in configuration file. `MaxSearchAlgo` can only be `Zonal` or `Classic`
+
+### Errors 3* -- Section "Plot" in config file
+30. Incomplete configuration file. Missing section `Plot`
+31. Incomplete configuration file. Missing `PointSparsity` in section `Plot`
+32. Incomplete configuration file. Missing `PointsEnabled` in section `Plot`
+33. Incomplete configuration file. Missing `LablesEnabled` in section `Plot`
+34. Incomplete configuration file. Missing `PointsSize` in section `Plot`
+35. Incomplete configuration file. Missing `LabelsSize` in section `Plot`
+36. Incomplete configuration file. Missing `LatMin` in section `Plot`
+37. Incomplete configuration file. Missing `LatMax` in section `Plot`
+38. Incomplete configuration file. Missing `LonMin` in section `Plot`
+39. Incomplete configuration file. Missing `LonMax` in section `Plot`
+40. Incomplete configuration file. Missing `PlotSteps` in section `Plot`
+
+### Errors 5* -- Section "Output" in config file
+50. Incomplete configuration file. Missing section `Output`
+51. Incomplete configuration file. Missing `PlotDirectory` in section `Output`
+52. Incomplete configuration file. Missing `BaselinePlotName` in section `Output`
+53. Incomplete configuration file. Missing `LogFile` in section `Output`
+54. Incomplete configuration file. Missing `OutputDirectory` in section `Output`
+
+### Errors 6* -- Section "Debug" in config file
+60. Incomplete configuration file. Missing section `Debug`
+61. Incomplete configuration file. Missing `PlotStartPoint` in section `Debug`
+62. Incomplete configuration file. Missing `PlotEndPoint` in section `Debug`
+63. Incomplete configuration file. Missing `ThalwegStop` option in `Debug` section of configuration file!
+
+### Errors 1** - Working errors
+100. Not enough parameters
+101. Invalid zonal direction detected.
+
 
 ## Next steps
 1. Implementation of automatic identification of starting point

@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
 
 # global reqs
-from termcolor import colored
-import matplotlib.pyplot as plt
-import xarray as xr
-import numpy as np
 import sys
-import pdb
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-from scipy import interpolate
 from collections import Counter
 
 # local reqs
@@ -111,7 +103,7 @@ def get_acceptable_dir(direc):
         # return ["W", "NW", "N"]
     else:
         raise InvalidZonalDirectionException()
-        sys.exit(100)
+        sys.exit(101)
 
 
 #########################################################
@@ -162,7 +154,7 @@ def get_direction_rank(dir, lastdir):
         scores = {"N": 5, "NE": 1, "E": 0, "SE": 0, "S": 0, "SW": 1, "W": 5, "NW": 9}
     else:
         raise(InvalidZonalDirectionException)
-        sys.exit(100)
+        sys.exit(101)
         
     # return
     return scores[dir]
@@ -260,4 +252,4 @@ def get_acceptable_dir_by_trend(trend):
         return ["W", "NW", "N"]
     else:
         raise InvalidZonalDirectionException()
-        sys.exit(100)
+        sys.exit(101)
