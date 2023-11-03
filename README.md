@@ -1,5 +1,9 @@
 # EstuarIO_thalweg
-A python software to identify the thalweg in a river
+_A python software to identify the thalweg in a river_
+
+<p align="center">
+<img src="./doc/img/thai_logo.png" width="30%">
+</p>
 
 ## Preparation
 
@@ -21,7 +25,7 @@ $ conda activate myEnv
 To invoke the script:
 
 ```
-$ python customThalweg.py <BATHYMETRY_FILE> <CONFIG_FILE>
+$ python thai.py <BATHYMETRY_FILE> <CONFIG_FILE>
 ```
 
 Please remember to check that settings in the config file are correct. See `sample.conf` for an example.
