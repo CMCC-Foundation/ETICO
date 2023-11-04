@@ -301,7 +301,7 @@ def get_acceptable_dir_by_trend(trend):
 #
 #########################################################
 
-def get_acceptable_dir_by_complex_trend(trend):
+def get_acceptable_dir_by_complex_trend(trend, tolerance = 1):
     
     """Identifies the direction of the next movement
     
@@ -316,13 +316,28 @@ def get_acceptable_dir_by_complex_trend(trend):
         a list of the acceptable directions
     """
     
-    # get the two most-rated directions of the trend
-    trendDirsFull = sorted(trend.items(),key=lambda x: x[1], reverse=True)[0:2]
+    # get the rated directions of the trend and sort them
+    trendDirsFull = sorted(trend.items(),key=lambda x: x[1], reverse=True)
+    
+    # now find the most-rated
     trendDirs = []
-    trendDirs.append(trendDirsFull[0][0])
-    if len(trendDirsFull) > 1:
-        if trendDirsFull[0][1] - trendDirsFull[1][1] < 1:
-            trendDirs.append(trendDirsFull[1][0])
+    counter = 0
+    maxValue = trendDirsFull[0][1]
+    for el in trendDirsFull:   
+        
+        # add the first element
+        if counter == 0:    
+            trendDirs.append(el[0])
+            counter += 1
+            continue
+        
+        # now add the others, if the difference with the max value is less than tolerance
+        else:
+            if maxValue - el[1] < tolerance:
+                trendDirs.append(el[0])
+            else:
+                break
+        counter += 1
     
     # initialise a list for allowed directions
     directions = []

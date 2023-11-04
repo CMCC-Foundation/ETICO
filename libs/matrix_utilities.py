@@ -327,6 +327,7 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
     fullprint_matrix("find_next_through_classic_direction", matrix, logFile)
     
     checkDir = True
+    trendTolerance = 1
     while True:    
     
         # find the cells with the maximum value (mind the plural!!!)
@@ -350,7 +351,7 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
         # calculate trend to add it to the rank
         if len(directionList) > 10:
             trend, complex_trend = get_trend(directionList)
-            dirs = get_acceptable_dir_by_complex_trend(complex_trend)
+            dirs = get_acceptable_dir_by_complex_trend(complex_trend, trendTolerance)
         else:
             trend = None
             
@@ -382,7 +383,19 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
             max_element = max(ranking, key=lambda x: x["score"])
         except ValueError:
             fullprint("find_next_through_classic_direction", "SIAMO NEL VALUEERROR", logFile)
-            return None, [None, None], None
+            
+            # we arrived to a possible stop condition... If it's the first time on this element,
+            # let's try again by incrementing the trendTolerance... If we already tried, then
+            # we can say that this is the end...
+            
+            if trendTolerance == 3:
+                fullprint("find_next_through_classic_direction", "MI ARRENDO", logFile)
+                return None, [None, None], None
+            else:
+                fullprint("find_next_through_classic_direction", "PROVO CON TT 3", logFile)
+                trendTolerance = 3
+                matrix = orig_matrix.copy()
+                continue
             
         # select the potential next element
         next_el_coords = max_element["coords"]
