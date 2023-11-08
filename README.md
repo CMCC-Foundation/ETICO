@@ -10,7 +10,9 @@ _A python software to identify the thalweg in a river_
 Before running the script, you have to (create and) activate the proper environment. The creation can be done with:
 
 ```
-$ conda create -f environment.yml --name myEnv
+$ conda create -n thai
+$ conda activate thai
+$ conda install python xarray cartopy termcolor matplotlib scipy
 ```
 
 Then, activate the environment with:

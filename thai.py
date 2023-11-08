@@ -5,6 +5,7 @@ import xarray as xr
 import numpy as np
 import sys
 import csv
+import os
 
 # local requirements
 from libs.direction_utilities import *
