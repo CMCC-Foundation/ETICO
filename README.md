@@ -2,7 +2,7 @@
 _A python software to identify the thalweg in a river_
 
 <p align="center">
-<img src="./doc/img/thai_logo.png" width="30%">
+<img src="./doc/img/etico_logo.png" width="30%">
 </p>
 
 ## Preparation
