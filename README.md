@@ -1,4 +1,4 @@
-# EstuarIO_thalweg
+# ETICO -- EstuarIO Thalweg Identification Code
 _A python software to identify the thalweg in a river_
 
 <p align="center">
