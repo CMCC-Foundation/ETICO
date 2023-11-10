@@ -19,7 +19,7 @@ $ conda install -c conda-forge geopy
 Then, activate the environment with:
 
 ```
-$ conda activate myEnv
+$ conda activate etico
 ```
 
 
