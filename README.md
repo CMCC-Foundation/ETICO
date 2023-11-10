@@ -28,7 +28,7 @@ $ conda activate myEnv
 To invoke the script:
 
 ```
-$ python thai.py <BATHYMETRY_FILE> <CONFIG_FILE>
+$ python etico.py <BATHYMETRY_FILE> <CONFIG_FILE>
 ```
 
 Please remember to check that settings in the config file are correct. See `sample_tolle.conf` for an example.
@@ -55,8 +55,9 @@ If you want to investigate the code, or implement your changes, the following in
 ├── logs                                  # a (currently not used) folder to automatically store logs
 ├── plots                                 # a (currently not used) fodler to automatically store plots
 ├── README.md
-└── sample.conf                           # an example of configuration file
-
+└── sample_goro.conf                      # an example of configuration file for a section of Po Goro
+└── sample_goro_full.conf                 # an example of configuration file for the whole Po Goro
+└── sample_tolle.conf                     # an example of configuration file for the whole Po Tolle
 ```
 
 ## Error codes
