@@ -73,6 +73,14 @@ The following are the results of determining the thalweg on a section of the Po 
 <img src="./doc/img/goro_full.png" width="75%">
 </p>
 
+### Po Gnocca
+
+For Po Gnocca river:
+
+<p align="center">
+<img src="./doc/img/gnocca.png" width="75%">
+</p>
+
 ### Po Tolle
 
 The following picture shows the result of running the algorithm on the Po Tollo branch of Po river.
