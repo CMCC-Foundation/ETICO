@@ -43,6 +43,10 @@ If you want to investigate the code, or implement your changes, the following in
 ├── dataset                               # a collection of datasets to test the application
 │   ├── GORO_100m_reg.nc                  # a section of the Po Goro branch with 100m resolution
 │   └── GORO_10m_reg.nc                   # a section of the Po Goro branch with 10m resolution
+│   └── GORO_10m_FULL_reg.nc              # a section of the Po Goro branch with 10m resolution
+│   └── GNOCCA_10m_reg.nc                 # a section of the Po Goro branch with 10m resolution
+│   └── TOLLE_10m_reg.nc                  # a section of the Po Goro branch with 10m resolution
+│   └── DRITTA_10m_reg.nc                 # a section of the Po Goro branch with 10m resolution
 ├── __init__.py
 ├── libs                                  # the folder hosting the main code modules
 │   ├── config_utilities.py               # the module taking care of the configuration
@@ -55,7 +59,8 @@ If you want to investigate the code, or implement your changes, the following in
 ├── logs                                  # a (currently not used) folder to automatically store logs
 ├── plots                                 # a (currently not used) fodler to automatically store plots
 ├── README.md
-└── sample_gnocca.conf                      # an example of configuration file for the whole Po Gnocca
+└── sample_dritta.conf                    # an example of configuration file for the whole Po Dritta
+└── sample_gnocca.conf                    # an example of configuration file for the whole Po Gnocca
 └── sample_goro.conf                      # an example of configuration file for a section of Po Goro
 └── sample_goro_full.conf                 # an example of configuration file for the whole Po Goro
 └── sample_tolle.conf                     # an example of configuration file for the whole Po Tolle
@@ -80,6 +85,14 @@ For Po Gnocca river:
 
 <p align="center">
 <img src="./doc/img/gnocca.png" width="75%">
+</p>
+
+### Po Dritta
+
+For Po Dritta river:
+
+<p align="center">
+<img src="./doc/img/dritta.png" width="75%">
 </p>
 
 ### Po Tolle

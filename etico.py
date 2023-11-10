@@ -105,11 +105,11 @@ if __name__ == "__main__":
     #
     #######################################################################
     
-    # find the baseline
-    baseline = find_baseline(ds)
+    # # find the baseline
+    # baseline = find_baseline(ds)
 
-    # plot the baseline    
-    plot_baseline(baseline, ds, configDict, logFile)
+    # # plot the baseline    
+    # plot_baseline(baseline, ds, configDict, logFile)
 
     # check if the start point allows to take a complete matrix,
     # otherwise, create a matrix to fill the gaps
