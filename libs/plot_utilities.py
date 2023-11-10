@@ -136,11 +136,11 @@ def plot(ds, thalweg, thalweg_depth, configDict, logFile):
                       linewidth=0.1, color='gray', alpha=0.5, linestyle='--')
 
     # Add ticks
-    ax.set_xticks(np.linspace(min_lon, max_lon, num=5))
+    ax.set_xticks(np.round(np.linspace(min_lon, max_lon, num=5)), 2)
     for t in ax.get_xticklabels():
         t.set_fontsize(5)  
 
-    ax.set_yticks(np.linspace(min_lat, max_lat, num=5))
+    ax.set_yticks(np.round(np.linspace(min_lat, max_lat, num=5)), 2)
     for t in ax.get_yticklabels():
         t.set_fontsize(5)  
         
@@ -149,8 +149,11 @@ def plot(ds, thalweg, thalweg_depth, configDict, logFile):
     ax.set_ylim(min_lat, max_lat)
           
     # Set plot title and colorbar
-    plt.title('Bathymetry and Thalweg', fontsize=5)
-    cb = plt.colorbar(bathy_plot, label='Depth (m)', shrink=0.5)
+    plt.title('Bathymetry and Thalweg', fontsize=8)
+    plt.ylabel('Latitude (degN)', fontsize=5)
+    plt.xlabel('Longitude (degE)', fontsize=5)
+    cb = plt.colorbar(bathy_plot, shrink=0.5)
+    cb.set_label('Depth (m)', fontsize=5)
     for t in cb.ax.get_yticklabels():
         t.set_fontsize(5)            
     
