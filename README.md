@@ -60,6 +60,27 @@ If you want to investigate the code, or implement your changes, the following in
 └── sample_tolle.conf                     # an example of configuration file for the whole Po Tolle
 ```
 
+## Tests
+
+### Po Goro
+
+The following are the results of determining the thalweg on a section of the Po Goro branch and on the full length of Po Goro.
+<p align="center">
+<img src="./doc/img/goro.png" width="75%">
+</p>
+
+<p align="center">
+<img src="./doc/img/goro_full.png" width="75%">
+</p>
+
+### Po Tolle
+
+The following picture shows the result of running the algorithm on the Po Tollo branch of Po river.
+
+<p align="center">
+<img src="./doc/img/tolle.png" width="75%">
+</p>
+
 ## Error codes
 
 The script fails with an **error code** that should help the user to discover what's wrong:
