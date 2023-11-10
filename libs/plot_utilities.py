@@ -102,12 +102,6 @@ def plot(ds, thalweg, thalweg_depth, configDict, logFile):
     Nothing
     
     """
-
-    # # bounding box
-    # min_lat = 44.92
-    # max_lat = 45
-    # min_lon = 12.06
-    # max_lon = 12.23
     
     min_lat = configDict["latMin"]
     min_lon = configDict["lonMin"]
@@ -138,18 +132,18 @@ def plot(ds, thalweg, thalweg_depth, configDict, logFile):
     # Add ticks
     ax.set_xticks(np.round(np.linspace(min_lon, max_lon, num=5)), 2)
     for t in ax.get_xticklabels():
-        t.set_fontsize(5)  
+        t.set_fontsize(3)  
 
     ax.set_yticks(np.round(np.linspace(min_lat, max_lat, num=5)), 2)
     for t in ax.get_yticklabels():
-        t.set_fontsize(5)  
+        t.set_fontsize(3)  
         
     # Set the limits for the x-axis and y-axis to zoom to the specified area
     ax.set_xlim(min_lon, max_lon)
     ax.set_ylim(min_lat, max_lat)
           
     # Set plot title and colorbar
-    plt.title('Bathymetry and Thalweg', fontsize=8)
+    plt.title('Bathymetry and Thalweg', fontsize=7)
     plt.ylabel('Latitude (degN)', fontsize=5)
     plt.xlabel('Longitude (degE)', fontsize=5)
     cb = plt.colorbar(bathy_plot, shrink=0.5)
