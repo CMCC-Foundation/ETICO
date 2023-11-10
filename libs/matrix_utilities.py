@@ -288,7 +288,7 @@ def find_next_through_zonal_direction(matrix, coords, lon_idx, lat_idx, logFile=
 #
 #########################################################
 
-def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, directionList, logFile):
+def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, directionList, logFile, configDict):
      
     """Extract the next element through the classic method
     
@@ -306,6 +306,8 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
         The list of the all the directions took in the past
     logFile: fileDescriptor
         A file descriptor for logging purposes
+    configDict:
+        The dictionary with all the configuration
 
     Returns
     -------
@@ -371,7 +373,7 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
             # add a score to the element based on the last direction or
             # if in the initialization phase, based on the desired direction
             if len(directionList) < 10:
-                rank_new_el["score"] = get_initial_rank(rank_new_el["dir"], "NW")
+                rank_new_el["score"] = get_initial_rank(rank_new_el["dir"], configDict["startDir"])
             else:
                 rank_new_el["score"] = get_direction_rank(rank_new_el["dir"], directionList[-1])  
                 
@@ -506,8 +508,12 @@ def get_max_index(matrix, tolerance):
     rounded_matrix = np.round(matrix, decimals=2)
     
     # get the maximum
-    maxValue = np.nanmax(rounded_matrix)
-    
+    try:
+        maxValue = np.nanmax(rounded_matrix)
+    except ValueError:
+        print("SIAMO NEL SECONDO VALUEERROR")
+        return [None, None], None
+        
     # create a mask with all the values that are close to the maximum (using a tolerance threshold)
     mask = np.abs(rounded_matrix - maxValue) <= tolerance
     row_indices, col_indices = np.where(mask)

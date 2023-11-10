@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # global reqs
+from geopy.distance import geodesic
 import xarray as xr
 import numpy as np
 import sys
@@ -168,7 +169,7 @@ if __name__ == "__main__":
         ds.bathy.data[lat_idx, lon_idx] = -np.inf
             
         # find the cells with maximum value
-        next_value, shift_coords, d = find_next_through_classic_direction(ds, lon_idx, lat_idx, configDict["windowSize"], directionList, logFile)
+        next_value, shift_coords, d = find_next_through_classic_direction(ds, lon_idx, lat_idx, configDict["windowSize"], directionList, logFile, configDict)
         
         # debug print
         fullprint("__main__", "Next element is %s with direction %s" % (d, next_value), logFile)
@@ -214,10 +215,15 @@ if __name__ == "__main__":
         
     #######################################################################
     #
-    # RECAP
+    # PREPARE CSV FILE AND CALCULATE THALWEG LENGTH
     #
     #######################################################################
 
+    # initialize length of the thalweg and prev element
+    talLength = 0
+    prev = None
+    
+    # initialise the counter
     counter = 0
     fullprint("__main__", "The log of directions is:", logFile)
     for d in directionList:        
@@ -232,6 +238,23 @@ if __name__ == "__main__":
         csvwriter = csv.writer(csvfile)
         for t in thalweg:
             csvwriter.writerow([float(ds.lat[t[0]]), float(ds.lon[t[1]])])
+
+            # for calculating the length, skip if first point
+            if  not prev:
+                prev = t
+                continue
+    
+            # calculate Euclidean distance
+            # d = np.sqrt(np.power(prev[0]-t[0], 2) + np.power(prev[1]-t[1], 2))
+            p1 = (float(ds.lat[t[0]]), float(ds.lon[t[1]]))
+            p2 = (float(ds.lat[prev[0]]), float(ds.lon[prev[1]]))
+            d = geodesic(p1, p2).meters
+        
+            # update prev and thalweg length
+            prev = t
+            talLength += d
+    
+    fullprint("__main__", "Length of the thalweg: %s m" % np.round(talLength, 2), logFile)
 
 
     #######################################################################

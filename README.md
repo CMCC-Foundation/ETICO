@@ -13,6 +13,7 @@ Before running the script, you have to (create and) activate the proper environm
 $ conda create -n thai
 $ conda activate thai
 $ conda install python xarray cartopy termcolor matplotlib scipy
+$ conda install -c conda-forge geopy
 ```
 
 Then, activate the environment with:
@@ -30,7 +31,7 @@ To invoke the script:
 $ python thai.py <BATHYMETRY_FILE> <CONFIG_FILE>
 ```
 
-Please remember to check that settings in the config file are correct. See `sample.conf` for an example.
+Please remember to check that settings in the config file are correct. See `sample_tolle.conf` for an example.
 
 ## Code structure
 
@@ -66,7 +67,7 @@ The script fails with an **error code** that should help the user to discover wh
 
 ### Errors 2* -- Section "Algorithm" in config file
 20. Incomplete configuration file. Missing section `Algorithm`
-21. Incomplete configuration file. Missing `MaxSearchAlgo` in section `Algorithm`
+21. Incomplete configuration file. Missing `StartDir` in section `Algorithm`
 22. Incomplete configuration file. Missing `WindowSize` in section `Algorithm`
 23. Incomplete configuration file. Missing `StartLat` in section `Algorithm`
 24. Incomplete configuration file. Missing `StartLon` in section `Algorithm`

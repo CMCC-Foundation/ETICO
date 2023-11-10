@@ -59,16 +59,6 @@ def read_algorithm_section(config, configDict):
     
     """    
     
-    # read the max search algo         
-    try:
-        configDict["maxSearchAlgo"] = config.get("Algorithm", "MaxSearchAlgo")
-    except NoOptionError:
-        raise IncompleteConfigFileError("Missing 'MaxSearchAlgo' option in 'Algorithm' section of configuration file!")
-        sys.exit(21)
-    except NoSectionError:
-        raise IncompleteConfigFileError("Missing 'Algorithm' section of configuration file!")
-        sys.exit(20)
-    
     # try to read the window size
     try:
         configDict["windowSize"] = config.getint("Algorithm", "WindowSize")
@@ -119,9 +109,16 @@ def read_algorithm_section(config, configDict):
         raise IncompleteConfigFileError("Missing 'Algorithm' section of configuration file!")
         sys.exit(20)
         
-    if not configDict["maxSearchAlgo"] in ["Zonal", "Classic"]:
-        raise UnsupportedMaxSearchAlgoError()
+    # try to read the start lat
+    try:
+        configDict["startDir"] = config.get("Algorithm", "StartDir")
+    except NoOptionError:
+        raise IncompleteConfigFileError("Missing 'StartDir' option in 'Algorithm' section of configuration file!")
+        sys.exit(21)
+    except NoSectionError:
+        raise IncompleteConfigFileError("Missing 'Algorithm' section of configuration file!")
         sys.exit(20)
+
     
         
 def read_plot_section(config, configDict):
