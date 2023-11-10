@@ -10,8 +10,8 @@ _A python software to identify the thalweg in a river_
 Before running the script, you have to (create and) activate the proper environment. The creation can be done with:
 
 ```
-$ conda create -n thai
-$ conda activate thai
+$ conda create -n etico
+$ conda activate etico
 $ conda install python xarray cartopy termcolor matplotlib scipy
 $ conda install -c conda-forge geopy
 ```
@@ -19,7 +19,7 @@ $ conda install -c conda-forge geopy
 Then, activate the environment with:
 
 ```
-$ conda activate myEnv
+$ conda activate etico
 ```
 
 
@@ -59,6 +59,27 @@ If you want to investigate the code, or implement your changes, the following in
 └── sample_goro_full.conf                 # an example of configuration file for the whole Po Goro
 └── sample_tolle.conf                     # an example of configuration file for the whole Po Tolle
 ```
+
+## Tests
+
+### Po Goro
+
+The following are the results of determining the thalweg on a section of the Po Goro branch and on the full length of Po Goro.
+<p align="center">
+<img src="./doc/img/goro.png" width="75%">
+</p>
+
+<p align="center">
+<img src="./doc/img/goro_full.png" width="75%">
+</p>
+
+### Po Tolle
+
+The following picture shows the result of running the algorithm on the Po Tollo branch of Po river.
+
+<p align="center">
+<img src="./doc/img/tolle.png" width="75%">
+</p>
 
 ## Error codes
 
