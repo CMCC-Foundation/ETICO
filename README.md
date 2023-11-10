@@ -55,6 +55,7 @@ If you want to investigate the code, or implement your changes, the following in
 ├── logs                                  # a (currently not used) folder to automatically store logs
 ├── plots                                 # a (currently not used) fodler to automatically store plots
 ├── README.md
+└── sample_gnocca.conf                      # an example of configuration file for the whole Po Gnocca
 └── sample_goro.conf                      # an example of configuration file for a section of Po Goro
 └── sample_goro_full.conf                 # an example of configuration file for the whole Po Goro
 └── sample_tolle.conf                     # an example of configuration file for the whole Po Tolle
