@@ -3,6 +3,7 @@
 # global reqs
 import sys
 import pdb
+import numpy as np
 from collections import Counter
 
 # local reqs
@@ -301,7 +302,7 @@ def get_acceptable_dir_by_trend(trend):
 #
 #########################################################
 
-def get_acceptable_dir_by_complex_trend(trend, tolerance = 1):
+def get_acceptable_dir_by_complex_trend(trend, tolerance = 1, permissive = False):
     
     """Identifies the direction of the next movement
     
@@ -347,29 +348,140 @@ def get_acceptable_dir_by_complex_trend(trend, tolerance = 1):
         if trend == "N":
             for x in ["NW", "N", "NE"]:
                 directions.append(x)
+            if permissive:
+                directions.append("W")
+                directions.append("E")
         elif trend == "NE":
             for x in ["N", "NE", "E"]:
                 directions.append(x)
+            if permissive:
+                directions.append("NW")
+                directions.append("SE")
         elif trend == "E":
             for x in ["NE", "E", "SE"]:
                 directions.append(x)
+            if permissive:
+                directions.append("N")
+                directions.append("S")
         elif trend == "SE":
             for x in ["E", "SE", "S"]:
                 directions.append(x)
+            if permissive:
+                directions.append("NE")
+                directions.append("SW")
         elif trend == "S":
             for x in ["SE", "S", "SW"]:
                 directions.append(x)
+            if permissive:
+                directions.append("E")
+                directions.append("W")
         elif trend == "SW":
             for x in ["S", "SW", "W"]:
                 directions.append(x)
+            if permissive:
+                directions.append("NW")
+                directions.append("SE")                
         elif trend == "W":
             for x in ["W", "SW", "S"]:
                 directions.append(x)
+            if permissive:
+                directions.append("N")
+                directions.append("S")
         elif trend == "NW":
             for x in ["W", "NW", "N"]:
                 directions.append(x)
+            if permissive:
+                directions.append("NE")
+                directions.append("SW")
         else:
             raise InvalidZonalDirectionException()
             sys.exit(101)
             
     return directions
+
+
+
+
+#########################################################
+#
+# get_initial_rank
+#
+#########################################################
+
+def get_initial_rank(direl, desiredDir):
+    
+    """Identifies the direction of the next movement
+    
+    Parameters
+    ----------
+    desiredDir: string
+        the approximate direction for the thalweg
+    
+    Returns
+    -------
+    list
+        a list of the acceptable directions
+    """
+        
+    if desiredDir == "N":
+        scores = {"N": 9, "NE": 5, "E": 1, "SE": 0, "S": 0, "SW": 0, "W": 1, "NW": 5}
+        
+    elif desiredDir  == "NE":
+        scores = {"N": 5, "NE": 9, "E": 5, "SE": 1, "S": 0, "SW": 0, "W": 0, "NW": 1}
+        
+    elif desiredDir  == "E":
+        scores = {"N": 1, "NE": 5, "E": 9, "SE": 5, "S": 1, "SW": 0, "W": 0, "NW": 0}
+        
+    elif desiredDir  == "SE":
+        scores = {"N": 0, "NE": 1, "E": 5, "SE": 9, "S": 5, "SW": 1, "W": 0, "NW": 0}
+        
+    elif desiredDir  == "S":
+        scores = {"N": 0, "NE": 0, "E": 1, "SE": 5, "S": 9, "SW": 5, "W": 1, "NW": 0}
+
+    elif desiredDir  == "SW":
+        scores = {"N": 0, "NE": 0, "E": 0, "SE": 1, "S": 5, "SW": 9, "W": 5, "NW": 1}
+
+    elif desiredDir  == "W":
+        scores = {"N": 1, "NE": 0, "E": 0, "SE": 0, "S": 1, "SW": 5, "W": 9, "NW": 5}
+
+    elif desiredDir  == "NW":
+        scores = {"N": 5, "NE": 1, "E": 0, "SE": 0, "S": 0, "SW": 1, "W": 5, "NW": 9}
+    else:
+        raise(InvalidZonalDirectionException)
+        sys.exit(101)
+        
+    # return
+    return scores[direl]
+
+
+#########################################################
+#
+# get_distance_from_endpoint
+#
+#########################################################
+
+def get_distance_from_endpoint(point, endPoint):
+    
+    """Calculate the distance from the end point
+    
+    Parameters
+    ----------
+    point: list
+        a list of two values (lat and lon) of the point
+    endPoint: list
+        a list of two values (lat and lon) of the end point
+    
+    Returns
+    -------
+    float
+        the distance
+    """
+        
+    lat = point[0]
+    lon = point[1]
+    endLat = endPoint[0]
+    endLat = endPoint[1]
+    distance = np.sqrt(np.sqr(lat - endLat) + np.sqr(lon - endLon))
+
+    # return
+    return distance

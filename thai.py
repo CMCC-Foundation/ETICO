@@ -5,6 +5,7 @@ import xarray as xr
 import numpy as np
 import sys
 import csv
+import pdb
 import os
 
 # local requirements
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     # save the original bathy
     ods = ds.copy(deep=True)
 
-    # Start an 'endless' loop
+    # Start an 'endless' loop                                       
     iterat = 0
     
      
@@ -109,6 +110,38 @@ if __name__ == "__main__":
     # plot the baseline    
     plot_baseline(baseline, ds, configDict, logFile)
 
+    # check if the start point allows to take a complete matrix,
+    # otherwise, create a matrix to fill the gaps
+    halfWindowSize = int(configDict["windowSize"]) // 2
+    
+    # CASE 1: we are too close to bottom margin
+    if lat_idx + halfWindowSize > len(ds.lat)-1:
+        fullprint("__main__", "Too close to bottom margin", logFile)
+        fullprint("__main__", "Setting lat to: %s" % str(len(ds.lat) - 1 - halfWindowSize), logFile)
+        
+        lat_idx = int(len(ds.lat) - 1 - halfWindowSize)
+        lat_given = ds.lat[lat_idx]
+        
+    # CASE 2: we are too close to top margin
+    elif lat_idx - configDict["windowSize"] < 0:
+        fullprint("__main__", "Too close to top margin", logFile)
+        fullprint("__main__", "Setting lat to: %s" % str(len(ds.lat) - 1 - halfWindowSize), logFile)    
+        
+        lat_idx = halfWindowSize + 1
+        lat_given = ds.lat[lat_idx]
+
+            
+    # CASE 3: we are too close to right margin
+    if lon_idx + halfWindowSize > len(ds.lat)-1:
+        print("TROPPO VICINI AL BORDO DESTRO")
+    # CASE 2: we are too close to left margin
+    elif lon_idx - configDict["windowSize"] < 0:
+        print("TROPPO VICINI AL BORDO SINISTRO")
+            
+
+    print("THE NEW STARTING POINT IS:")
+    print("%s -- %s -- %s" % (ds.lat[lat_idx].values, ds.lon[lon_idx].values, ds.bathy[lat_idx, lon_idx].values))
+
 
     #######################################################################
     #
@@ -133,40 +166,16 @@ if __name__ == "__main__":
         # mark the current cell as visited
         visited.append((int(lat_idx), int(lon_idx)))
         ds.bathy.data[lat_idx, lon_idx] = -np.inf
-
-        # identify the next element based on the zonal direction
-        if configDict["maxSearchAlgo"] == "Zonal":
             
-            # set the half window size
-            halfsize = configDict["windowSize"] // 2
-            
-            # extract a size x size matrix
-            matrix, lat_ind_list, lon_ind_list = get_matrix_centered_on(ds, lat_idx, lon_idx, configDict["windowSize"])
+        # find the cells with maximum value
+        next_value, shift_coords, d = find_next_through_classic_direction(ds, lon_idx, lat_idx, configDict["windowSize"], directionList, logFile)
         
-            # identify the zonal direction
-            zd = get_zonal_direction(matrix, lon_ind_list, lat_ind_list)
-            submatrix = get_3x3_submatrix(ds.bathy, lat_idx, lon_idx)
-            
-            # find the maximum
-            next_value, shift_coords = find_next_through_zonal_direction(submatrix, zd, lon_idx, lat_idx)
-            
-        elif configDict["maxSearchAlgo"] == "Classic":
-            
-            # find the cells with maximum value
-            next_value, shift_coords, d = find_next_through_classic_direction(ds, lon_idx, lat_idx, configDict["windowSize"], directionList, logFile)
-            
-            # debug print
-            fullprint("__main__", "Next element is %s with direction %s" % (d, next_value), logFile)
+        # debug print
+        fullprint("__main__", "Next element is %s with direction %s" % (d, next_value), logFile)
+    
+        # save the last direction
+        directionList.append(d)
 
-            # save the last direction
-            directionList.append(d)
-            
-        else:
-            
-            # we should never get here, since we parse the config file
-            raise UnsupportedMaxSearchAlgoError()
-            sys.exit(27)
-                        
         # check the identified maximum value
         try:
             next_el_lat_idx = lat_idx + shift_coords[0]

@@ -328,6 +328,7 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
     
     checkDir = True
     trendTolerance = 1
+    permissive = False
     while True:    
     
         # find the cells with the maximum value (mind the plural!!!)
@@ -335,9 +336,10 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
         if len(directionList) > 10: # if we made the initialization
             coords_list, value = get_max_index(matrix, tolerance=0.1)
         else:
-            coords_list, value = get_max_index(matrix, tolerance=0)
-            
-        # get the list of acceptable directions
+            coords_list, value = get_max_index(matrix, tolerance=0.1)
+        
+        # get the list of acceptable directions based on the last direction
+        # if any, otherwise (of course), all are acceptable
         if len(directionList) > 0:
             dirs = get_acceptable_dir(directionList[-1])
         else:
@@ -348,13 +350,14 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
             fullprint("find_next_through_classic_direction", "------------> Next element is NONE", logFile)
             return None, [None, None], None
 
-        # calculate trend to add it to the rank
+        # get acceptable directions, this time based on trend
+        # in order to add the scores to the rank
         if len(directionList) > 10:
             trend, complex_trend = get_trend(directionList)
-            dirs = get_acceptable_dir_by_complex_trend(complex_trend, trendTolerance)
+            dirs = get_acceptable_dir_by_complex_trend(complex_trend, trendTolerance, permissive)
         else:
             trend = None
-            
+
         # let's try to rank the points        
         ranking = []
         for p in coords_list:
@@ -365,19 +368,26 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
             rank_new_el_local = [p[0] - window_size//2, p[1] - window_size // 2]
             rank_new_el["dir"] = get_direction_str(rank_new_el_local)    
             
-            # add a score to the element based on the direction
-            if len(directionList) > 0:
-                rank_new_el["score"] = get_direction_rank(rank_new_el["dir"], directionList[-1])  
+            # add a score to the element based on the last direction or
+            # if in the initialization phase, based on the desired direction
+            if len(directionList) < 10:
+                rank_new_el["score"] = get_initial_rank(rank_new_el["dir"], "NW")
             else:
-                rank_new_el["score"] = 9
+                rank_new_el["score"] = get_direction_rank(rank_new_el["dir"], directionList[-1])  
+                
+            # if len(directionList) > 0:
+            #     rank_new_el["score"] = get_direction_rank(rank_new_el["dir"], directionList[-1])  
+            # else:
+            #     rank_new_el["score"] = 9
             
-            # add the element to the ranking 
+            # add a score to the element based on the trend
+            if len(directionList) > 10:
+                ranking.append(rank_new_el)
+                if rank_new_el["dir"] in dirs:
+                    rank_new_el["score"] += 10
+                    
             ranking.append(rank_new_el)
-            
-            if rank_new_el["dir"] in dirs:
-                rank_new_el["score"] += 10
 
-            
         # instead of extracting the first element, let's choose by rank
         try:
             max_element = max(ranking, key=lambda x: x["score"])
@@ -394,6 +404,7 @@ def find_next_through_classic_direction(ds, lon_idx, lat_idx, window_size, direc
             else:
                 fullprint("find_next_through_classic_direction", "PROVO CON TT 3", logFile)
                 trendTolerance = 3
+                permissive = True
                 matrix = orig_matrix.copy()
                 continue
             
