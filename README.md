@@ -16,10 +16,10 @@ $ conda install python xarray cartopy termcolor matplotlib scipy
 $ conda install -c conda-forge geopy
 ```
 
-Then, activate the environment with:
+NOTE: on some systems, one of the dependencies (`libxcb`) may cause problems. In case, remove it with:
 
 ```
-$ conda activate etico
+$ conda uninstall libxcb
 ```
 
 
