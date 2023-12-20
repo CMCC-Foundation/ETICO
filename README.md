@@ -46,6 +46,7 @@ If you want to investigate the code, or implement your changes, the following in
 │   └── GORO_100m_reg.nc                  # a section of the Po Goro branch with 100m resolution
 │   └── GORO_10m_reg.nc                   # a section of the Po Goro branch with 10m resolution
 │   └── GORO_10m_FULL_reg.nc              # the Po Goro branch with 10m resolution
+│   ├── MAISTRA_10m_reg.nc                 # the Po Maistra branch with 10m resolution
 │   └── TOLLE_10m_reg.nc                  # the Po Tolle branch with 10m resolution
 ├── __init__.py
 ├── libs                                  # the folder hosting the main code modules
