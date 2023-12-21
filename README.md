@@ -16,7 +16,7 @@ $ conda install python xarray cartopy termcolor matplotlib scipy
 $ conda install -c conda-forge geopy
 ```
 
-NOTE: on some systems, one of the dependencies (`libxcb`) may cause problems. In case, remove it with:
+**NOTE:** on some systems, one of the dependencies (`libxcb`) may cause problems. In case, remove it with:
 
 ```
 $ conda uninstall libxcb
@@ -41,12 +41,13 @@ If you want to investigate the code, or implement your changes, the following in
 .
 ├── customThalweg.py                      # our main starting point
 ├── dataset                               # a collection of datasets to test the application
-│   ├── GORO_100m_reg.nc                  # a section of the Po Goro branch with 100m resolution
+│   ├── DRITTA_10m_reg.nc                 # the Po Dritta branch with 10m resolution
+│   └── GNOCCA_10m_reg.nc                 # the Po Gnocca branch with 10m resolution
+│   └── GORO_100m_reg.nc                  # a section of the Po Goro branch with 100m resolution
 │   └── GORO_10m_reg.nc                   # a section of the Po Goro branch with 10m resolution
-│   └── GORO_10m_FULL_reg.nc              # a section of the Po Goro branch with 10m resolution
-│   └── GNOCCA_10m_reg.nc                 # a section of the Po Goro branch with 10m resolution
-│   └── TOLLE_10m_reg.nc                  # a section of the Po Goro branch with 10m resolution
-│   └── DRITTA_10m_reg.nc                 # a section of the Po Goro branch with 10m resolution
+│   └── GORO_10m_FULL_reg.nc              # the Po Goro branch with 10m resolution
+│   ├── MAISTRA_10m_reg.nc                 # the Po Maistra branch with 10m resolution
+│   └── TOLLE_10m_reg.nc                  # the Po Tolle branch with 10m resolution
 ├── __init__.py
 ├── libs                                  # the folder hosting the main code modules
 │   ├── config_utilities.py               # the module taking care of the configuration
@@ -63,6 +64,7 @@ If you want to investigate the code, or implement your changes, the following in
 └── sample_gnocca.conf                    # an example of configuration file for the whole Po Gnocca
 └── sample_goro.conf                      # an example of configuration file for a section of Po Goro
 └── sample_goro_full.conf                 # an example of configuration file for the whole Po Goro
+└── sample_maistra.conf                   # an example of configuration file for the whole Po Maistra
 └── sample_tolle.conf                     # an example of configuration file for the whole Po Tolle
 ```
 
@@ -94,6 +96,15 @@ For Po Dritta river:
 <p align="center">
 <img src="./doc/img/dritta.png" width="75%">
 </p>
+
+### Po Maistra
+
+For Po Maistra river:
+
+<p align="center">
+<img src="./doc/img/maistra.png" width="75%">
+</p>
+
 
 ### Po Tolle
 
