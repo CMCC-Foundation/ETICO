@@ -227,7 +227,7 @@ def find_highest_bathy(ds, config):
         current_lat_idx, current_lon_idx = find_closest_index(ds, config['Input']['startLat'], config['Input']['startLon'])
         
         # Output CSV file setup
-        csv_path = os.path.join(config['Output']['baseFolder'], "path.csv")
+        csv_path = os.path.join(config['Output']['baseFolder'], config['Output']['thalwegCsvFile'])
         with open(csv_path, mode='w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             csv_writer.writerow(['Latitude', 'Longitude', 'Depth', 'Direction'])

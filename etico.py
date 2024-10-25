@@ -93,10 +93,7 @@ if __name__ == "__main__":
     #
     ################################################
 
-    plot_bathy_with_path(config['Input']['inputFile'],
-                         os.path.join(config['Output']['baseFolder'], "path.csv"),
-                         os.path.join(config['Output']['baseFolder'], "thalweg.png"),
-                         config)
+    plot_bathy_with_path(config)
 
 
     ### TODO LIST

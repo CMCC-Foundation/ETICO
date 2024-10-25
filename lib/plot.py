@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import logging
 import sys
+import os
 
 # local requirements
 from .configParser import parse_config
@@ -34,7 +35,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 #
 ################################################
 
-def plot_bathy_with_path(netcdf_file, csv_file, output_file, config):
+def plot_bathy_with_path(config):
     """
     Plot the bathymetry map with the path from the CSV file overlaid on top.
     
@@ -44,7 +45,13 @@ def plot_bathy_with_path(netcdf_file, csv_file, output_file, config):
     - output_file: Path to save the output plot image.
     - config: Configuration dictionary with plotting settings.
     """
+
+    netcdf_file = config["Input"]["inputFile"]
+    csv_file = os.path.join(config["Output"]["baseFolder"], config['Output']['thalwegCsvFile'])
+    output_file = os.path.join(config["Output"]["baseFolder"], config['Output']['thalwegPngFile'])
+    
     try:
+        
         # Load bathy data from NetCDF file
         ds = xr.open_dataset(netcdf_file)
         if 'bathy' not in ds:
@@ -117,19 +124,13 @@ def plot_bathy_with_path(netcdf_file, csv_file, output_file, config):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) < 4:
-        print("Usage: python plot.py <netcdf_file> <csv_file> <config_file>")
+    if len(sys.argv) < 2:
+        print("Usage: python plot.py <config_file>")
     else:
-        netcdf_file = sys.argv[1]
-        csv_file = sys.argv[2]
-        config_file = sys.argv[3]
+        config_file = sys.argv[1]
 
         # Parse the configuration file
         config = parse_config(config_file)
 
-        # Use the output directory from the config
-        output_directory = config['Output']['baseFolder']
-        output_file = f"{output_directory}/thalweg.png"
-
         # Generate the plot
-        plot_bathy_with_path(netcdf_file, csv_file, output_file, config)
+        plot_bathy_with_path(config)

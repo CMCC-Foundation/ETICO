@@ -35,27 +35,28 @@ def parse_config(config_file):
     
     # initialise a dictionary to hold the configuration
     config = {'Output': {}, 'Input': {}, 'Plot': {}}
-    
-    # Validate and extract parameters from the Output section
-    try:
-        config['Output']['baseFolder'] = parser.get('Output', 'baseFolder')
-        if not config['Output']['baseFolder']:
-            raise ValueError("The 'baseFolder' entry in the 'Output' section is empty.")
-    except (NoSectionError, NoOptionError) as e:
-        logging.error(f"Missing required parameter: {e}")
-        raise
-    except ValueError as e:
-        logging.error(e)
-        raise
-    
+
     # validate and extract parameters from the Input section
     try:
 
+        ### Output section
+        
         # read the name for the base output folder
         config['Output']['baseFolder'] = parser.get('Output', 'baseFolder')
         if not config['Output']['baseFolder']:
             raise ValueError("The 'baseFolder' entry in the 'Output' section is empty.")
+        
+        # read the name for the thalweg csv file
+        config['Output']['thalwegCsvFile'] = parser.get('Output', 'thalwegCsvFile')
+        if not config['Output']['thalwegCsvFile']:
+            raise ValueError("The 'thalwegCsvFile' entry in the 'Output' section is empty.")
+                
+        # read the name for the thalweg png file
+        config['Output']['thalwegPngFile'] = parser.get('Output', 'thalwegPngFile')
+        if not config['Output']['thalwegPngFile']:
+            raise ValueError("The 'thalwegPngFile' entry in the 'Output' section is empty.")
 
+        
         ### Plot section
         
         # read the size of the dots to plot
@@ -111,9 +112,7 @@ def parse_config(config_file):
         # read the colour for the end point
         config['Plot']['endPointColour'] = parser.get('Plot', 'endPointColour')
         if not config['Plot']['endPointColour']:
-            raise ValueError("The 'endPointColour' entry in the 'Plot' section is empty.")
-
-        
+            raise ValueError("The 'endPointColour' entry in the 'Plot' section is empty.")      
 
         
         ### Input section
