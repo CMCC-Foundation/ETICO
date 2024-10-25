@@ -8,6 +8,7 @@
 
 # global requirements
 import logging
+import traceback
 from configparser import ConfigParser, NoSectionError, NoOptionError
 
 
@@ -33,7 +34,7 @@ def parse_config(config_file):
     parser.read(config_file)
     
     # initialise a dictionary to hold the configuration
-    config = {'Output': {}, 'Input': {}}
+    config = {'Output': {}, 'Input': {}, 'Plot': {}}
     
     # Validate and extract parameters from the Output section
     try:
@@ -55,10 +56,67 @@ def parse_config(config_file):
         if not config['Output']['baseFolder']:
             raise ValueError("The 'baseFolder' entry in the 'Output' section is empty.")
 
-        # read the name for the base output folder
-        config['Output']['dotSize'] = parser.getfloat('Output', 'dotSize')
-        if not config['Output']['dotSize']:
-            raise ValueError("The 'dotSize' entry in the 'Output' section is empty.")
+        ### Plot section
+        
+        # read the size of the dots to plot
+        config['Plot']['dotSize'] = parser.get('Plot', 'dotSize')
+        if not config['Plot']['dotSize']:
+            raise ValueError("The 'dotSize' entry in the 'Plot' section is empty.")
+
+        # read whether or not to plot dots
+        config['Plot']['plotDots'] = parser.getboolean('Plot', 'plotDots')
+        if not config['Plot']['plotDots']:
+            raise ValueError("The 'plotDots' entry in the 'Plot' section is empty.")
+
+        # read the interval to plot dots
+        config['Plot']['dotsInterval'] = parser.getint('Plot', 'dotsInterval')
+        if not config['Plot']['dotsInterval']:
+            raise ValueError("The 'dotsInterval' entry in the 'Plot' section is empty.")
+
+        # read the font size for the dots label
+        config['Plot']['dotsFontSize'] = parser.getint('Plot', 'dotsFontSize')
+        if not config['Plot']['dotsFontSize']:
+            raise ValueError("The 'dotsFontSize' entry in the 'Plot' section is empty.")
+
+        # read the font colour for the dots label
+        config['Plot']['dotsFontColour'] = parser.get('Plot', 'dotsFontColour')
+        if not config['Plot']['dotsFontColour']:
+            raise ValueError("The 'dotsFontColour' entry in the 'Plot' section is empty.")
+
+        # read the size for the start point
+        config['Plot']['startPointSize'] = parser.getint('Plot', 'startPointSize')
+        if not config['Plot']['startPointSize']:
+            raise ValueError("The 'startPointSize' entry in the 'Plot' section is empty.")
+
+        # read the marker to use for the start point
+        config['Plot']['startPointMarker'] = parser.get('Plot', 'startPointMarker')
+        if not config['Plot']['startPointMarker']:
+            raise ValueError("The 'startPointMarker' entry in the 'Plot' section is empty.")
+
+        # read the colour for the start point
+        config['Plot']['startPointColour'] = parser.get('Plot', 'startPointColour')
+        if not config['Plot']['startPointColour']:
+            raise ValueError("The 'startPointColour' entry in the 'Plot' section is empty.")
+
+        # read the size for the end point
+        config['Plot']['endPointSize'] = parser.getint('Plot', 'endPointSize')
+        if not config['Plot']['endPointSize']:
+            raise ValueError("The 'endPointSize' entry in the 'Plot' section is empty.")
+
+        # read the marker to use for the end point
+        config['Plot']['endPointMarker'] = parser.get('Plot', 'endPointMarker')
+        if not config['Plot']['endPointMarker']:
+            raise ValueError("The 'endPointMarker' entry in the 'Plot' section is empty.")
+
+        # read the colour for the end point
+        config['Plot']['endPointColour'] = parser.get('Plot', 'endPointColour')
+        if not config['Plot']['endPointColour']:
+            raise ValueError("The 'endPointColour' entry in the 'Plot' section is empty.")
+
+        
+
+        
+        ### Input section
         
         # read the name for the input file (.grd, .nc, etc)
         config['Input']['inputFile'] = parser.get('Input', 'inputFile')
@@ -80,6 +138,21 @@ def parse_config(config_file):
         if not (-180 <= config['Input']['startLon'] <= 180):
             raise ValueError("The 'startLon' must be within the range -180 to 180 degrees.")
 
+        # read latitude of the ending point
+        config['Input']['endLat'] = parser.getfloat('Input', 'endLat')
+        if not (-90 <= config['Input']['endLat'] <= 90):
+            raise ValueError("The 'endLat' must be within the range -90 to 90 degrees.")
+
+        # read longitude of the ending point        
+        config['Input']['endLon'] = parser.getfloat('Input', 'endLon')
+        if not (-180 <= config['Input']['endLon'] <= 180):
+            raise ValueError("The 'endLon' must be within the range -180 to 180 degrees.")
+
+        # read Distancegitude of the ending point        
+        config['Input']['endDistance'] = parser.getint('Input', 'endDistance')
+        if not config['Input']['endDistance']:
+            raise ValueError("The 'endDistance' entry in the 'Input' section is empty.")
+        
         # read the initial direction
         config['Input']['initialDirection'] = parser.get('Input', 'initialDirection')
         if not config['Input']['initialDirection']:

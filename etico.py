@@ -84,7 +84,7 @@ if __name__ == "__main__":
     ################################################
 
     ds = load_netcdf(config['Input']['inputFile'])
-    find_highest_bathy(ds,
+    find_highest_bathy(ds, config,
                        start_lat=config['Input']['startLat'],
                        start_lon=config['Input']['startLon'],
                        window_size=config['Input']['windowSize'],

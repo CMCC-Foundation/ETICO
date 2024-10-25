@@ -1,10 +1,38 @@
+#!/usr/bin/python3
+
+################################################
+#
+# Requirements
+#
+################################################
+
+# global requirements
+import matplotlib.pyplot as plt
 import xarray as xr
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
+import logging
 import sys
 
+# local requirements
 from .configParser import parse_config
+
+
+################################################
+#
+# logger configuration
+#
+################################################        
+
+# Configure logging for this module
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+################################################
+#
+# plot_bathy_with_path
+#
+################################################
 
 def plot_bathy_with_path(netcdf_file, csv_file, output_file, config):
     """
@@ -41,10 +69,30 @@ def plot_bathy_with_path(netcdf_file, csv_file, output_file, config):
                    cmap='viridis', aspect='auto')
         plt.colorbar(label="Depth")
 
-        # Overlay the path points
-        dot_size = config['Output']['dotSize']
-        plt.plot(path_lons, path_lats, marker='o', color='red', markersize=dot_size, linestyle='-', linewidth=0.2, label="Path")
+        # Overlay the path points if plotDots is enabled
+        if config['Output'].get('plotDots', True):
 
+            dot_size = config['Plot']['dotSize']
+            dots_interval = config['Plot']['dotsInterval']
+
+            # Plot the dots on the path and add index numbers
+            plt.plot(path_lons, path_lats, marker='none', color='red', markersize=dot_size, linestyle='-', linewidth=0.2, label="Thalweg")
+
+            # Use the dots interval to filter the path points
+            path_lats = path_lats[::dots_interval]
+            path_lons = path_lons[::dots_interval]
+            
+            # Plot the dots on the path and add index numbers
+            plt.plot(path_lons, path_lats, marker='o', color='red', markersize=dot_size, linestyle='none', linewidth=0.2)
+            
+            # Add numbers next to the dots
+            for idx, (lat, lon) in enumerate(zip(path_lats, path_lons)):
+                plt.text(lon, lat, str(idx * config["Plot"]["dotsInterval"]), fontsize=config["Plot"]["dotsFontSize"], ha='right', va='bottom', color=config["Plot"]["dotsFontColour"])
+
+        # add a marker for start and end points
+        plt.plot(config["Input"]["startLon"], config["Input"]["startLat"], marker=config["Plot"]["startPointMarker"], color=config["Plot"]["startPointColour"], markersize=config["Plot"]["startPointSize"])
+        plt.plot(config["Input"]["endLon"], config["Input"]["endLat"], marker=config["Plot"]["endPointMarker"], color=config["Plot"]["endPointColour"], markersize=config["Plot"]["endPointSize"])
+            
         # Labels and title
         plt.xlabel("Longitude")
         plt.ylabel("Latitude")
@@ -55,10 +103,17 @@ def plot_bathy_with_path(netcdf_file, csv_file, output_file, config):
         plt.savefig(output_file, dpi=300)
         plt.close()
 
-        print(f"Plot saved to {output_file}")
+        logging.info(f"Plot saved to {output_file}")
 
     except Exception as e:
         print(f"Error: {e}")
+
+
+################################################
+#
+# Main
+#
+################################################
 
 if __name__ == "__main__":
 
