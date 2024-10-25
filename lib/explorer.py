@@ -214,7 +214,7 @@ def print_neighborhood(bathy, lat_min, lat_max, lon_min, lon_max, candidates, se
 #
 ################################################
 
-def find_highest_bathy(ds, config, start_lat, start_lon, window_size, max_iterations, depth_tolerance, init_phase, start_direction, output_directory):
+def find_highest_bathy(ds, config):
 
     """
     Find the highest bathy point in the neighborhood of size windowSize
@@ -224,24 +224,24 @@ def find_highest_bathy(ds, config, start_lat, start_lon, window_size, max_iterat
         bathy = ds['bathy'].values
         
         # Start from the initial coordinates and find the closest grid cell indices
-        current_lat_idx, current_lon_idx = find_closest_index(ds, start_lat, start_lon)
+        current_lat_idx, current_lon_idx = find_closest_index(ds, config['Input']['startLat'], config['Input']['startLon'])
         
         # Output CSV file setup
-        csv_path = os.path.join(output_directory, "path.csv")
+        csv_path = os.path.join(config['Output']['baseFolder'], "path.csv")
         with open(csv_path, mode='w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             csv_writer.writerow(['Latitude', 'Longitude', 'Depth', 'Direction'])
             
             # Write the starting point to the CSV without rounding
             start_depth = bathy[current_lat_idx, current_lon_idx]
-            csv_writer.writerow([start_lat, start_lon, start_depth, "None"])
+            csv_writer.writerow([config['Input']['startLat'], config['Input']['startLon'], start_depth, "None"])
 
         # Keep track of visited cells
         visited_cells = set()
         directions_taken = []
-        last_direction = start_direction
+        last_direction = config['Input']['initialDirection']
 
-        for i in range(max_iterations):
+        for i in range(config['Input']['maxIterations']):
             logging.info("\n")
             logging.info(f"Iteration {i + 1}: Current Position - Lat Index: {current_lat_idx}, Lon Index: {current_lon_idx}")
 
@@ -266,7 +266,7 @@ def find_highest_bathy(ds, config, start_lat, start_lon, window_size, max_iterat
             visited_cells.add((current_lat_idx, current_lon_idx))
 
             # Determine the neighborhood bounds based on full window size
-            half_window = window_size // 2
+            half_window = config['Input']['windowSize'] // 2
             lat_min = max(0, current_lat_idx - half_window)
             lat_max = min(bathy.shape[0], current_lat_idx + half_window + 1)
             lon_min = max(0, current_lon_idx - half_window)
@@ -279,12 +279,12 @@ def find_highest_bathy(ds, config, start_lat, start_lon, window_size, max_iterat
             for lat_idx in range(lat_min, lat_max):
                 for lon_idx in range(lon_min, lon_max):
                     if not np.isnan(bathy[lat_idx, lon_idx]):
-                        if bathy[lat_idx, lon_idx] >= highest_bathy - depth_tolerance:
+                        if bathy[lat_idx, lon_idx] >= highest_bathy - config['Input']['depthTolerance']:
                             highest_bathy = max(highest_bathy, bathy[lat_idx, lon_idx])
                             candidates.append((lat_idx, lon_idx, bathy[lat_idx, lon_idx]))
 
             # Filter candidates within the tolerance range
-            candidates = [(lat, lon, val) for lat, lon, val in candidates if val >= highest_bathy - depth_tolerance]
+            candidates = [(lat, lon, val) for lat, lon, val in candidates if val >= highest_bathy - config['Input']['depthTolerance']]
 
             if not candidates:
                 logging.info("All points in the neighborhood are visited or NaN; stopping.")
@@ -295,7 +295,7 @@ def find_highest_bathy(ds, config, start_lat, start_lon, window_size, max_iterat
 
             # Determine the most frequent direction from the last 10 movements
             most_frequent_direction = find_most_frequent_direction(directions_taken[-10:])
-            preferred_direction = start_direction if i < init_phase else last_direction
+            preferred_direction = config['Input']['initialDirection'] if i < config['Input']['initPhase'] else last_direction
             best_candidate = None
             best_similarity = -np.inf
 

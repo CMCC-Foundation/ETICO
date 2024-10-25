@@ -84,15 +84,7 @@ if __name__ == "__main__":
     ################################################
 
     ds = load_netcdf(config['Input']['inputFile'])
-    find_highest_bathy(ds, config,
-                       start_lat=config['Input']['startLat'],
-                       start_lon=config['Input']['startLon'],
-                       window_size=config['Input']['windowSize'],
-                       max_iterations=config['Input']['maxIterations'],
-                       depth_tolerance=config['Input']['depthTolerance'],
-                       init_phase=config['Input']['initPhase'],                       
-                       start_direction=config['Input']['initialDirection'],
-                       output_directory=config['Output']['baseFolder'])
+    find_highest_bathy(ds, config)
 
 
     ################################################
@@ -105,3 +97,14 @@ if __name__ == "__main__":
                          os.path.join(config['Output']['baseFolder'], "path.csv"),
                          os.path.join(config['Output']['baseFolder'], "thalweg.png"),
                          config)
+
+
+    ### TODO LIST
+    # - post processing procedure to identify and remove loops
+    # - implement a restart algorithm, to restart the algo from the last point if the
+    #   end point was not reached
+    # - add a friendly name for the "Experiment" so that it can be used for names of files and dirs
+    # - change the format of logs
+    # - plot the riverbed profile
+    # - check the scoring functions
+    # - make the scoring functions plug and play
