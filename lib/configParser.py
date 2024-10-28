@@ -58,6 +58,11 @@ def parse_config(config_file):
 
         
         ### Plot section
+
+        # read the colour for the thalweg
+        config['Plot']['plotColour'] = parser.get('Plot', 'plotColour')
+        if not config['Plot']['plotColour']:
+            raise ValueError("The 'plotColour' entry in the 'Plot' section is empty.")      
         
         # read the size of the dots to plot
         config['Plot']['dotSize'] = parser.get('Plot', 'dotSize')
@@ -113,7 +118,7 @@ def parse_config(config_file):
         config['Plot']['endPointColour'] = parser.get('Plot', 'endPointColour')
         if not config['Plot']['endPointColour']:
             raise ValueError("The 'endPointColour' entry in the 'Plot' section is empty.")      
-
+        
         
         ### Input section
         
