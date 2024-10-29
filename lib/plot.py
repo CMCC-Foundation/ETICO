@@ -69,7 +69,8 @@ def plot_bathy_with_path(config):
         path_lons = path_data['Longitude'].values
 
         # Create the bathymetry plot
-        plt.figure(figsize=(10, 8))
+        plt.figure()
+        fig, ax = plt.subplots(figsize=(10, 8), dpi=600)
 
         # Plot the bathy data as a background
         plt.imshow(bathy, origin='lower', extent=[lons.min(), lons.max(), lats.min(), lats.max()],
@@ -106,8 +107,11 @@ def plot_bathy_with_path(config):
         plt.title("Bathymetry Map with Path")
         plt.legend()
 
+        ax.set_aspect('equal', adjustable='box')
+
+        
         # Save the plot to an image file
-        plt.savefig(output_file, dpi=300)
+        plt.savefig(output_file, dpi=600)
         plt.close()
 
         logging.info(f"Plot saved to {output_file}")
