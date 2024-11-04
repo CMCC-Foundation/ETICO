@@ -7,6 +7,8 @@
 ################################################        
 
 # global requirements
+import os
+import pdb
 import logging
 import traceback
 from configparser import ConfigParser, NoSectionError, NoOptionError
@@ -31,8 +33,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def parse_config(config_file):
     
     parser = ConfigParser()
-    parser.read(config_file)
-    
+    if os.path.exists(config_file):
+        parser.read(config_file)
+    else:
+        raise FileNotFoundError(f"Config file {config_file} does not exists!")
+
+           
     # initialise a dictionary to hold the configuration
     config = {'Output': {}, 'Input': {}, 'Plot': {}}
 
@@ -42,9 +48,13 @@ def parse_config(config_file):
         ### Output section
         
         # read the name for the base output folder
+        print(1)
         config['Output']['baseFolder'] = parser.get('Output', 'baseFolder')
+        print(2)        
         if not config['Output']['baseFolder']:
+            print(3)
             raise ValueError("The 'baseFolder' entry in the 'Output' section is empty.")
+        print(4)
         
         # read the name for the thalweg csv file
         config['Output']['thalwegCsvFile'] = parser.get('Output', 'thalwegCsvFile')
@@ -62,6 +72,7 @@ def parse_config(config_file):
         # read the colour for the thalweg
         config['Plot']['plotColour'] = parser.get('Plot', 'plotColour')
         if not config['Plot']['plotColour']:
+
             raise ValueError("The 'plotColour' entry in the 'Plot' section is empty.")      
         
         # read the size of the dots to plot
@@ -71,8 +82,6 @@ def parse_config(config_file):
 
         # read whether or not to plot dots
         config['Plot']['plotDots'] = parser.getboolean('Plot', 'plotDots')
-        if not config['Plot']['plotDots']:
-            raise ValueError("The 'plotDots' entry in the 'Plot' section is empty.")
 
         # read the interval to plot dots
         config['Plot']['dotsInterval'] = parser.getint('Plot', 'dotsInterval')
@@ -187,9 +196,14 @@ def parse_config(config_file):
         if config['Input']['windowSize'] <= 0:
             raise ValueError("The 'windowSize' must be a positive integer.")
         
-    except (NoSectionError, NoOptionError) as e:
+    except (NoOptionError) as e:
+        print(traceback.print_exc())
         logging.error(f"Missing required parameter: {e}")
         raise
+    except (NoSectionError) as e:
+        print(traceback.print_exc())
+        logging.error(f"Missing required parameter: {e}")
+        raise    
     except ValueError as e:
         logging.error(e)
         raise

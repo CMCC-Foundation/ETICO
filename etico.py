@@ -51,12 +51,6 @@ if __name__ == "__main__":
     try:
         config = parse_config(config_file)
         logging.info("Configuration file parsed successfully.")
-        # You can now use the parsed config for further processing
-        # Example:
-        logging.info(f"Base Folder: {config['Output']['baseFolder']}")
-        logging.info(f"Input File: {config['Input']['inputFile']}")
-        logging.info(f"Window Size: {config['Input']['windowSize']}")
-        
     except Exception as e:
         logging.error(f"Error while parsing the configuration file: {e}")
         sys.exit(1)

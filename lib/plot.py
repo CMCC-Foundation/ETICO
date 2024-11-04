@@ -51,6 +51,8 @@ def plot_bathy_with_path(config):
     output_file = os.path.join(config["Output"]["baseFolder"], config['Output']['thalwegPngFile'])
     
     try:
+
+        logging.info("1 ASDFASDFASDFADSFA")
         
         # Load bathy data from NetCDF file
         ds = xr.open_dataset(netcdf_file)
@@ -68,6 +70,8 @@ def plot_bathy_with_path(config):
         path_lats = path_data['Latitude'].values
         path_lons = path_data['Longitude'].values
 
+        logging.info("2 ASDFASDFASDFADSFA")
+        
         # Create the bathymetry plot
         plt.figure()
         fig, ax = plt.subplots(figsize=(10, 8), dpi=600)
@@ -77,14 +81,17 @@ def plot_bathy_with_path(config):
                    cmap='viridis', aspect='auto')
         plt.colorbar(label="Depth")
 
+        dot_size = config['Plot']['dotSize']
+        dots_interval = config['Plot']['dotsInterval']
+
+        # Plot the dots on the path and add index numbers
+        plt.plot(path_lons, path_lats, marker='none', color='red', markersize=dot_size, linestyle='-', linewidth=0.2, label="Thalweg")
+
+
+        logging.info("3 ASDFASDFASDFADSFA")
+        
         # Overlay the path points if plotDots is enabled
-        if config['Output'].get('plotDots', True):
-
-            dot_size = config['Plot']['dotSize']
-            dots_interval = config['Plot']['dotsInterval']
-
-            # Plot the dots on the path and add index numbers
-            plt.plot(path_lons, path_lats, marker='none', color='red', markersize=dot_size, linestyle='-', linewidth=0.2, label="Thalweg")
+        if config['Plot']['plotDots']:
 
             # Use the dots interval to filter the path points
             path_lats = path_lats[::dots_interval]
