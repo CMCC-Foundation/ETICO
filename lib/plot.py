@@ -48,6 +48,7 @@ def plot_bathy_with_path(config):
 
     netcdf_file = config["Input"]["inputFile"]
     csv_file = os.path.join(config["Output"]["baseFolder"], config['Output']['thalwegCsvFile'])
+    upd_csv_file = os.path.join(config["Output"]["baseFolder"], "updated_thalweg.csv")
     output_file = os.path.join(config["Output"]["baseFolder"], config['Output']['thalwegPngFile'])
     
     try:
@@ -65,11 +66,14 @@ def plot_bathy_with_path(config):
 
         # Load path data from CSV file
         path_data = pd.read_csv(csv_file)
+        upd_path_data = pd.read_csv(upd_csv_file)
 
         # Extract the latitudes and longitudes from the path
         path_lats = path_data['Latitude'].values
         path_lons = path_data['Longitude'].values
-
+        upd_path_lats = upd_path_data['Latitude'].values
+        upd_path_lons = upd_path_data['Longitude'].values
+        
         logging.info("2 ASDFASDFASDFADSFA")
         
         # Create the bathymetry plot
@@ -84,9 +88,9 @@ def plot_bathy_with_path(config):
         dot_size = config['Plot']['dotSize']
         dots_interval = config['Plot']['dotsInterval']
 
-        # Plot the dots on the path and add index numbers
+        # Plot the line
         plt.plot(path_lons, path_lats, marker='none', color='red', markersize=dot_size, linestyle='-', linewidth=0.2, label="Thalweg")
-
+        plt.plot(upd_path_lons, upd_path_lats, marker='none', color='black', markersize=dot_size, linestyle='-', linewidth=0.2, label="Thalweg")
 
         logging.info("3 ASDFASDFASDFADSFA")
         
@@ -104,6 +108,20 @@ def plot_bathy_with_path(config):
             for idx, (lat, lon) in enumerate(zip(path_lats, path_lons)):
                 plt.text(lon, lat, str(idx * config["Plot"]["dotsInterval"]), fontsize=config["Plot"]["dotsFontSize"], ha='right', va='bottom', color=config["Plot"]["dotsFontColour"])
 
+            # POSTPROCESSED THALWEG
+
+            # # Use the dots interval to filter the path points
+            # upd_path_lats = upd_path_lats[::dots_interval]
+            # upd_path_lons = upd_path_lons[::dots_interval]
+            
+            # # Plot the dots on the path and add index numbers
+            # plt.plot(path_lons, upd_path_lats, marker='x', color='black', markersize=dot_size, linestyle='none', linewidth=0.2)
+            
+            # # Add numbers next to the dots
+            # for idx, (lat, lon) in enumerate(zip(path_lats, path_lons)):
+            #     plt.text(lon, lat, str(idx * config["Plot"]["dotsInterval"]), fontsize=config["Plot"]["dotsFontSize"], ha='right', va='bottom', color=config["Plot"]["dotsFontColour"])
+
+                
         # add a marker for start and end points
         plt.plot(config["Input"]["startLon"], config["Input"]["startLat"], marker=config["Plot"]["startPointMarker"], color=config["Plot"]["startPointColour"], markersize=config["Plot"]["startPointSize"])
         plt.plot(config["Input"]["endLon"], config["Input"]["endLat"], marker=config["Plot"]["endPointMarker"], color=config["Plot"]["endPointColour"], markersize=config["Plot"]["endPointSize"])
@@ -113,9 +131,7 @@ def plot_bathy_with_path(config):
         plt.ylabel("Latitude")
         plt.title("Bathymetry Map with Path")
         plt.legend()
-
         ax.set_aspect('equal', adjustable='box')
-
         
         # Save the plot to an image file
         plt.savefig(output_file, dpi=600)

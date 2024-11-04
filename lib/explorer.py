@@ -1472,7 +1472,6 @@ def find_highest_bathy(ds, config):
                         
                         # Set the bathymetry value to np.nan for the surrounding points
                         working_bathy[lat_idx, lon_idx] = np.nan                
-
                 
                 # update the index of the current element
                 current_lat_idx = best_candy["lat_idx"]
