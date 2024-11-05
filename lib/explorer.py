@@ -52,6 +52,30 @@ DIRECTIONS = {
 
 
 
+
+def mean_angle(angles):
+    # Convert angles from degrees to radians
+    angles_rad = [math.radians(angle) for angle in angles]
+
+    # Calculate the mean sine and cosine values
+    sin_sum = sum(math.sin(angle) for angle in angles_rad)
+    cos_sum = sum(math.cos(angle) for angle in angles_rad)
+    
+    # Calculate the mean angle in radians
+    mean_angle_rad = math.atan2(sin_sum, cos_sum)
+    
+    # Convert the mean angle back to degrees
+    mean_angle_deg = math.degrees(mean_angle_rad)
+    
+    # Ensure the result is in the range -180 to 180
+    if mean_angle_deg > 180:
+        mean_angle_deg -= 360
+    elif mean_angle_deg <= -180:
+        mean_angle_deg += 360
+    
+    return mean_angle_deg
+
+
 ################################################
 #
 # REFACTORING === get_final_direction
@@ -152,15 +176,25 @@ def cardinal_to_angle(cardinal_direction):
     - float: L'angolo corrispondente in gradi (N = 0°, E = 90°, S = 180°, W = 270°).
     """
     cardinal_direction = cardinal_direction.upper()
+    # cardinal_to_angle_map = {
+    #     'N': 0,
+    #     'NE': 45,
+    #     'E': 90,
+    #     'SE': 135,
+    #     'S': 180,
+    #     'SW': 225,
+    #     'W': 270,
+    #     'NW': 315
+    # }
     cardinal_to_angle_map = {
         'N': 0,
         'NE': 45,
         'E': 90,
         'SE': 135,
         'S': 180,
-        'SW': 225,
-        'W': 270,
-        'NW': 315
+        'SW': -135,
+        'W': -90,
+        'NW': -45
     }
 
     return cardinal_to_angle_map.get(cardinal_direction, None)
@@ -187,15 +221,28 @@ def angle_to_cardinal(angle):
 
     # Mappa degli angoli per i punti cardinali principali e intermedi
     angle_to_cardinal_map = {
-        (337.5, 22.5): 'N',
+        (-22.5, 22.5): 'N',
         (22.5, 67.5): 'NE',
         (67.5, 112.5): 'E',
         (112.5, 157.5): 'SE',
-        (157.5, 202.5): 'S',
-        (202.5, 247.5): 'SW',
-        (247.5, 292.5): 'W',
-        (292.5, 337.5): 'NW'
+        (157.5, 180): 'S',
+        (-180, -157.5): 'S',
+        (-157.5, -112.5): 'SW',
+        (-112.5, -67.5): 'W',
+        (-67.5, -22.5): 'NW'
     }
+    
+    # # Mappa degli angoli per i punti cardinali principali e intermedi
+    # angle_to_cardinal_map = {
+    #     (337.5, 22.5): 'N',
+    #     (22.5, 67.5): 'NE',
+    #     (67.5, 112.5): 'E',
+    #     (112.5, 157.5): 'SE',
+    #     (157.5, 202.5): 'S',
+    #     (202.5, 247.5): 'SW',
+    #     (247.5, 292.5): 'W',
+    #     (292.5, 337.5): 'NW'
+    # }
 
     # Trova il punto cardinale corrispondente all'angolo
     for (start, end), cardinal in angle_to_cardinal_map.items():
@@ -240,6 +287,12 @@ def calculate_geodetic_bearing(lat1, lon1, lat2, lon2):
     # Converti l'angolo da radianti a gradi e normalizza tra 0 e 360
     initial_bearing = math.degrees(initial_bearing)
     bearing = (initial_bearing + 360) % 360
+
+
+    # EXPERIMENTAL 180
+    # converti l'angolo in [-180, 180]
+    if bearing > 180:
+        bearing = -1 * (360 - bearing)
     
     return bearing
 
@@ -769,7 +822,7 @@ def find_closest_index(ds, lat, lon):
 #
 ################################################
 
-def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max, lon_min, lon_max, candidates, selected):
+def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max, lon_min, lon_max, candidates, selected=None):
     
     """
     Stampa la griglia del vicinato, evidenziando i candidati e il punto selezionato.
@@ -817,10 +870,18 @@ def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max
                     g1_score = np.round(candict[key]["g1_score"], 2)
                     g2_score = np.round(candict[key]["g2_score"], 2)
                     g3_score = np.round(candict[key]["g3_score"], 2)
-                    if (candict[key]["lon_idx"] == selected["lon_idx"]) and (candict[key]["lat_idx"] == selected["lat_idx"]):
-                        cell = colored(f"{rounded_value} ({str(g1_score)}, {str(g2_score)}, {str(g3_score)})", "green")
-                    else:
-                        cell = f"{rounded_value} ({str(g1_score)}, {str(g2_score)}, {str(g3_score)})"
+                    try:
+                        if selected:
+                            if (candict[key]["lon_idx"] == selected["lon_idx"]) and (candict[key]["lat_idx"] == selected["lat_idx"]):
+                                cell = colored(f"{rounded_value} ({str(g1_score)}, {str(g2_score)}, {str(g3_score)})", "green")
+                            else:
+                                cell = f"{rounded_value} ({str(g1_score)}, {str(g2_score)}, {str(g3_score)})"                                
+                        else:
+                            cell = f"{rounded_value} ({str(g1_score)}, {str(g2_score)}, {str(g3_score)})"
+                    except:
+                        logging.error(traceback.print_exc())
+                        logging.error(selected)
+                        sys.exit()
                 else:
                     g1_score = None
                     g2_score = None            
@@ -1420,7 +1481,8 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
             logging.info(f"Maximum in neighborhood: {highest_bathy}")
             logging.info(f"Last direction: {lastDirection}")
             logging.info(f"Trend is {history[-10:]}")
-            logging.info(f"Trend direction is {np.mean(history[-10:])}")
+            logging.info(f"Trend direction is {mean_angle(history[-10:])}")
+            # logging.info(f"Trend direction is {np.mean(history[-10:])}")
                             
             # now iterate to process the candidates
             max_trend = 0
@@ -1441,12 +1503,7 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
                     if np.isnan(candidate["depth"]):
                         continue
                     
-                    # # determine g-component depth_score
-                    # if float(candidate["depth"]) <= float(highest_bathy) - float(config['Input']['depthTolerance']):
-                    #     depth_score = 1
-                    #     continue
-                    # else:
-                    #     depth_score = 0
+                    # determine g-component depth_score
                     try:
                         depth_score = 1 / float(candidate["depth"])
                     except ZeroDivisionError:
@@ -1455,11 +1512,11 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
                     # determine g-component "last direction"
                     bearing = calculate_geodetic_bearing(current_lat, current_lon, ds['lat'][lat_idx], ds['lon'][lon_idx])
                     angle_score = np.abs(bearing - lastDirection)
-                    # angle_score = multiply_score(angle_score)
 
                     # determine g-component "trend direction"
                     if len(history) >= 10:
-                        trend_score = np.abs(bearing - np.mean(history[-10:]))
+                        trend_score = np.abs(bearing - mean_angle(history[-10:]))
+                        # trend_score = np.abs(bearing - np.mean(history[-10:]))
                         trend_score = multiply_score(trend_score)
                         if trend_score > max_trend:
                             max_trend = trend_score
@@ -1472,7 +1529,8 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
                     candidate["g1_score"] = normalise(depth_score, 0, highest_bathy)
                     candidate["g2_score"] = normalise(angle_score, 0, 359)
                     if len(history) >= 10:
-                        candidate["g3_score"] = normalise(trend_score, 0, max_trend)
+                        # candidate["g3_score"] = normalise(trend_score, 0, max_trend)
+                        candidate["g3_score"] = normalise(trend_score, -180, 180)
                     else:
                         candidate["g3_score"] = 0
                     g = candidate["g1_score"] + candidate["g2_score"] + 1.3 * candidate["g3_score"]
@@ -1491,7 +1549,10 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
 
             # Log the neighborhood
             try:
-                print_neighborhood(current_lat_idx, current_lon_idx, working_bathy, lat_min, lat_max, lon_min, lon_max, candidates, best_candy)
+                if best_candy:
+                    print_neighborhood(current_lat_idx, current_lon_idx, working_bathy, lat_min, lat_max, lon_min, lon_max, candidates, best_candy)
+                else:
+                    print_neighborhood(current_lat_idx, current_lon_idx, working_bathy, lat_min, lat_max, lon_min, lon_max, candidates, None)
             except:
                 logging.error(traceback.print_exc())
                 pdb.set_trace()
