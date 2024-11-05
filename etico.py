@@ -79,8 +79,35 @@ if __name__ == "__main__":
     ################################################
 
     ds = load_netcdf(config['Input']['inputFile'])
-    find_highest_bathy(ds, config)
 
+    # intialise restart flag and counter
+    restart_points = []
+    restart = True
+    rest_cnt = 0
+
+    # loop
+    while restart:
+
+        # invoke the algorithm
+        if rest_cnt == 0:
+            restart, current_lat, current_lon, lastDirection, iteration = find_highest_bathy(ds, config)
+            logging.info(colored(f"=== RESTART {restart} ===", "blue", attrs=["bold"]))
+        else:
+            logging.info(colored(f"=== RESTART {restart} ===", "yellow", attrs=["bold"]))
+            if restart == True:
+                logging.info(colored(f"=== RESTART AT {iteration}, #{rest_cnt} ===", "red", attrs=["bold"]))
+                logging.info(colored(f"=== RESTARTING AT {current_lat}, {current_lon} IN DIRECTION {lastDirection} ===", "red", attrs=["bold"]))            
+                input()
+                restart, current_lat, current_lon, lastDirection, iteration = find_highest_bathy(ds, config, current_lat, current_lon, lastDirection, iteration)
+                restart_points.append(iteration)                
+            
+        rest_cnt += 1
+
+        # stop after 3 iterations
+        if rest_cnt == 3:
+            break
+
+        
     ################################################
     #
     # run the postprocessing
@@ -89,6 +116,7 @@ if __name__ == "__main__":
 
     postproc(config)
 
+    
     ################################################
     #
     # plot data
@@ -98,7 +126,7 @@ if __name__ == "__main__":
     plot_bathy_with_path(config)
 
 
-    ### TODO LIST
+    # todo LIST
     # - post processing procedure to identify and remove loops
     # - implement a restart algorithm, to restart the algo from the last point if the
     #   end point was not reached

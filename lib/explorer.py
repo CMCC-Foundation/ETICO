@@ -789,6 +789,7 @@ def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max
         row = []
         srow = ""
         trow = []
+
         for lon_idx in range(lon_min, lon_max):
             # Recupera il valore della profondità
             value = bathy[lat_idx, lon_idx]
@@ -800,7 +801,7 @@ def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max
                 angle = np.round(candict[key]["angle"], 2)
                 score = np.round(candict[key]["score"], 2)
                 # Formatta profondità e angolo per la visualizzazione
-                formatted_value = colored(f"{rounded_value:>8} ({score:>5.1f}°)", "green")
+                formatted_value = colored(f"{rounded_value:>8} ({score:>5.1f}°)", "green")                
             else:
 
                 if (current_lat_idx == lat_idx) and (current_lon_idx == lon_idx):                                 
@@ -816,7 +817,10 @@ def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max
                     g1_score = np.round(candict[key]["g1_score"], 2)
                     g2_score = np.round(candict[key]["g2_score"], 2)
                     g3_score = np.round(candict[key]["g3_score"], 2)
-                    cell = f"{rounded_value} ({str(g1_score)}, {str(g2_score)}, {str(g3_score)})"
+                    if (candict[key]["lon_idx"] == selected["lon_idx"]) and (candict[key]["lat_idx"] == selected["lat_idx"]):
+                        cell = colored(f"{rounded_value} ({str(g1_score)}, {str(g2_score)}, {str(g3_score)})", "green")
+                    else:
+                        cell = f"{rounded_value} ({str(g1_score)}, {str(g2_score)}, {str(g3_score)})"
                 else:
                     g1_score = None
                     g2_score = None            
@@ -833,18 +837,14 @@ def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max
         rows.append(" ".join(row))
         srows.append(srow)
         trows.append(trow)
+
+    rtrows = trows.reverse()
         
-    # Stampa la tabella con le righe in ordine inverso per mantenere l'orientamento corretto
-    # for el in rows[::-1]:
-    #     logging.info(el)
-
-    # for el in srows[::-1]:
-    #     logging.info(el)
-
+    # print the table
     table = tabulate(
         trows
     )
-    print(table)
+    logging.info(table)
     
     # print(candidates)
     
@@ -1306,46 +1306,73 @@ def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max
 #
 ################################################
 
-def find_highest_bathy(ds, config):
+def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=None, start_counter=0):
 
     """
     Find the highest bathy point in the neighborhood of size windowSize
     around the given start latitude and longitude. Save the path taken in a CSV file.
     """
+
+    # initialise restart
+    restart = False
     
     try:
         
         bathy = ds['bathy'].values
+
+        # ====== decide wether to restart or not ======
         
         # Start from the initial coordinates and find the closest grid cell indices
-        current_lat_idx, current_lon_idx = find_closest_index(ds, config['Input']['startLat'], config['Input']['startLon'])
-        
-        # Output CSV file setup
-        csv_path = os.path.join(config['Output']['baseFolder'], config['Output']['thalwegCsvFile'])
-        csvfile = open(csv_path, mode='w', newline='')
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(['Latitude', 'Longitude', 'Depth', 'Direction'])
-            
-        # Write the starting point to the CSV without rounding
-        start_depth = bathy[current_lat_idx, current_lon_idx]
-        csv_writer.writerow([config['Input']['startLat'], config['Input']['startLon'], start_depth, "None"])
+        if not start_lat:
 
-        # Keep track of visited cells
-        visited_cells = set()
-        history = []
-        last_direction = config['Input']['initialDirection']
+            logging.info(colored("FIRST RUN", "red", attrs=["bold"]))
+            
+            # we are on a brand new start
+            current_lat_idx, current_lon_idx = find_closest_index(ds, config['Input']['startLat'], config['Input']['startLon'])
+
+            # Output CSV file setup
+            csv_path = os.path.join(config['Output']['baseFolder'], config['Output']['thalwegCsvFile'])
+            csvfile = open(csv_path, mode='w', newline='')
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow(['Latitude', 'Longitude', 'Depth', 'Direction'])
+                    
+            # Write the starting point to the CSV without rounding
+            start_depth = bathy[current_lat_idx, current_lon_idx]
+            csv_writer.writerow([config['Input']['startLat'], config['Input']['startLon'], start_depth, "None"])
+            
+            # Keep track of visited cells
+            visited_cells = set()
+            history = []
+            lastDirection = cardinal_to_angle(config['Input']['initialDirection'])
+            
+        else:
+
+            logging.info(colored("RESTART RUN", "red", attrs=["bold"]))
+            
+            # we are on a restart condition
+            current_lat_idx, current_lon_idx = find_closest_index(ds, start_lat, start_lon)
+
+            # Output CSV file setup
+            csv_path = os.path.join(config['Output']['baseFolder'], config['Output']['thalwegCsvFile'])
+            csvfile = open(csv_path, mode='a', newline='')
+            csv_writer = csv.writer(csvfile)
+
+            # Keep track of visited cells
+            visited_cells = set()
+            history = []
+            lastDirection = start_dir
+            
 
         # ====== Start main loop ======
 
         # make a copy of the original bathymetry to work on that
         working_bathy = bathy.copy()
-       
-        # read the angle related to initial direction
-        lastDirection = cardinal_to_angle(config['Input']['initialDirection'])
-        
-        for i in range(config['Input']['maxIterations']):
+               
+        for i in range(start_counter, config['Input']['maxIterations']):
 
             # debug message
+            logging.info(f"")
+            logging.info(f"")
             logging.info(f"")
             logging.info(f"========= Starting iteration {i} =========")
             
@@ -1362,6 +1389,7 @@ def find_highest_bathy(ds, config):
             distance_to_end = calculate_distance(current_lat, current_lon, config["Input"]["endLat"], config["Input"]["endLon"])
             if distance_to_end <= config["Input"]["endDistance"]:
                 logging.info(f"Reached endpoint proximity: {distance_to_end:.2f} meters from the target point. Stopping.")
+                restart = False
                 break
 
             # ====== Determine neighborhood ======
@@ -1391,9 +1419,11 @@ def find_highest_bathy(ds, config):
                             highest_bathy = working_bathy[lat_idx, lon_idx]
             logging.info(f"Maximum in neighborhood: {highest_bathy}")
             logging.info(f"Last direction: {lastDirection}")
+            logging.info(f"Trend is {history[-10:]}")
             logging.info(f"Trend direction is {np.mean(history[-10:])}")
                             
-            # now iterate to process the candidates            
+            # now iterate to process the candidates
+            max_trend = 0
             for lat_idx in range(lat_min, lat_max):
                 for lon_idx in range(lon_min, lon_max):                    
 
@@ -1417,7 +1447,10 @@ def find_highest_bathy(ds, config):
                     #     continue
                     # else:
                     #     depth_score = 0
-                    depth_score = 1 / float(candidate["depth"])
+                    try:
+                        depth_score = 1 / float(candidate["depth"])
+                    except ZeroDivisionError:
+                        depth_score = 9999
                     
                     # determine g-component "last direction"
                     bearing = calculate_geodetic_bearing(current_lat, current_lon, ds['lat'][lat_idx], ds['lon'][lon_idx])
@@ -1428,6 +1461,8 @@ def find_highest_bathy(ds, config):
                     if len(history) >= 10:
                         trend_score = np.abs(bearing - np.mean(history[-10:]))
                         trend_score = multiply_score(trend_score)
+                        if trend_score > max_trend:
+                            max_trend = trend_score
                     else:
                         trend_score = 0
                                                         
@@ -1436,8 +1471,11 @@ def find_highest_bathy(ds, config):
 
                     candidate["g1_score"] = normalise(depth_score, 0, highest_bathy)
                     candidate["g2_score"] = normalise(angle_score, 0, 359)
-                    candidate["g3_score"] = normalise(trend_score, 0, 359)
-                    g = candidate["g1_score"] + candidate["g2_score"] + candidate["g3_score"]
+                    if len(history) >= 10:
+                        candidate["g3_score"] = normalise(trend_score, 0, max_trend)
+                    else:
+                        candidate["g3_score"] = 0
+                    g = candidate["g1_score"] + candidate["g2_score"] + 1.3 * candidate["g3_score"]
                     
                     # update the candidate and add it to the list
                     candidate["score"] = g
@@ -1453,7 +1491,7 @@ def find_highest_bathy(ds, config):
 
             # Log the neighborhood
             try:
-                print_neighborhood(current_lat_idx, current_lon_idx, working_bathy, lat_min, lat_max, lon_min, lon_max, candidates, None)
+                print_neighborhood(current_lat_idx, current_lon_idx, working_bathy, lat_min, lat_max, lon_min, lon_max, candidates, best_candy)
             except:
                 logging.error(traceback.print_exc())
                 pdb.set_trace()
@@ -1462,7 +1500,13 @@ def find_highest_bathy(ds, config):
             if best_candy:
 
                 # debug message
-                logging.info(f"SELECTED: {best_candy}")
+                # logging.info(f"SELECTED: {best_candy}")
+                logging.info(f"SELECTED ==> lat: %s, lon: %s, lat_idx: %s, lon_idx: %s, g1: %s, g2: %s, g3: %s, depth: %s" % (
+                    best_candy["lat"], best_candy["lon"],
+                    best_candy["lat_idx"], best_candy["lon_idx"],
+                    np.round(best_candy["g1_score"],3), np.round(best_candy["g2_score"],3), np.round(best_candy["g3_score"],3),
+                    np.round(best_candy["depth"],3)
+                ))
                 final_dir = get_final_direction((current_lat, current_lon), (best_candy["lat"], best_candy["lon"]))
                 logging.info(f"Moving towards {final_dir}")
 
@@ -1485,10 +1529,11 @@ def find_highest_bathy(ds, config):
             else:
 
                 logging.info("No suitable candidate found, exiting!")
+                restart = True
                 break
-
-                
-                            
+                                            
     except Exception as e:
         logging.error(f"Error during bathy analysis: {e}")
         raise
+
+    return restart, current_lat, current_lon, np.mean(history[-10:]), i
