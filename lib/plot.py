@@ -90,7 +90,7 @@ def plot_bathy_with_path(config):
 
         # Plot the line
         plt.plot(path_lons, path_lats, marker='none', color='red', markersize=dot_size, linestyle='-', linewidth=0.2, label="Thalweg")
-        plt.plot(upd_path_lons, upd_path_lats, marker='none', color='black', markersize=dot_size, linestyle='-', linewidth=0.2, label="Thalweg")
+        plt.plot(upd_path_lons, upd_path_lats, marker='none', color='black', markersize=dot_size, linestyle='-', linewidth=0.2, label="Improved Thalweg")
 
         logging.info("3 ASDFASDFASDFADSFA")
         
