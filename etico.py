@@ -15,6 +15,7 @@ import os
 from lib.configParser import *
 from lib.postproc import *
 from lib.explorer import *
+from lib.astar import *
 from lib.plot import *
 
 
@@ -70,6 +71,15 @@ if __name__ == "__main__":
         logging.info(f"Created base folder: {base_folder}")
     else:
         logging.info(f"Base folder already exists: {base_folder}")
+
+
+    ################################################
+    #
+    # run the greedy algorithm (needed for H function)
+    #
+    ################################################
+
+    start_a_star(config)
         
         
     ################################################

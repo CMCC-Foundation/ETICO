@@ -65,7 +65,21 @@ def parse_config(config_file):
         config['Output']['thalwegPngFile'] = parser.get('Output', 'thalwegPngFile')
         if not config['Output']['thalwegPngFile']:
             raise ValueError("The 'thalwegPngFile' entry in the 'Output' section is empty.")
-
+    
+        # read the name for the simplified csv file
+        config['Output']['simplifiedCsvFile'] = parser.get('Output', 'simplifiedCsvFile')
+        if not config['Output']['simplifiedCsvFile']:
+            raise ValueError("The 'simplifiedCsvFile' entry in the 'Output' section is empty.")
+                
+        # read the name for the simplified png file
+        config['Output']['simplifiedPngFile'] = parser.get('Output', 'simplifiedPngFile')
+        if not config['Output']['simplifiedPngFile']:
+            raise ValueError("The 'simplifiedPngFile' entry in the 'Output' section is empty.")
+        
+        # read the name for the simplified nc file
+        config['Output']['simplifiedNcFile'] = parser.get('Output', 'simplifiedNcFile')
+        if not config['Output']['simplifiedNcFile']:
+            raise ValueError("The 'simplifiedNcFile' entry in the 'Output' section is empty.")
         
         ### Plot section
 
