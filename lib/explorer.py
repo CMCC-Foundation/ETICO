@@ -21,6 +21,9 @@ from termcolor import colored
 from collections import Counter
 from tabulate import tabulate
 from math import radians, cos, sin, sqrt, atan2
+from scipy.spatial.distance import euclidean
+from scipy.ndimage import distance_transform_edt
+
 
 
 ################################################
@@ -52,6 +55,153 @@ DIRECTIONS = {
 
 
 
+
+################################################
+#
+# find_row_index
+#
+################################################
+
+def find_row_index(df, target_lat, target_lon):
+    """
+    Find the index of the row containing the specified latitude and longitude.
+    
+    Parameters:
+        csv_file (str): Path to the CSV file with 'latitude' and 'longitude' columns.
+        target_lat (float): The latitude to search for.
+        target_lon (float): The longitude to search for.
+    
+    Returns:
+        int or None: The index of the row if found, otherwise None.
+    """
+    
+    # Find the row index where latitude and longitude match the target values
+    logging.error(f"Looking for {target_lat}, {target_lon}")
+
+    row = df[(df['Latitude'] == target_lat) & (df['Longitude'] == target_lon)]
+    
+    # Check if a match was found and return the index
+    if not row.empty:
+        return row.index[0]
+    else:
+        return None
+
+
+################################################
+#
+# get_path_distance
+#
+################################################
+
+def get_path_distance(bathy_ds, path_ds, path_df, start, end, current):
+    """
+    Calculate path distances from the 'current' point to 'start' and 'end' points.
+    
+    Parameters:
+        bathy_ds (xarray.Dataset): Dataset containing the 'bathy' variable.
+        path_ds (xarray.Dataset): Dataset containing the path from start to end.
+        start (tuple): Coordinates (lat, lon) for the start point.
+        end (tuple): Coordinates (lat, lon) for the end point.
+        current (tuple): Coordinates (lat, lon) for the current point.
+    
+    Returns:
+        dict: A dictionary containing path distances for 'current' to 'start' and 'end'.
+    """
+    
+    # Define coordinates as lat/lon grids
+    lat_grid = bathy_ds['lat'].values
+    lon_grid = bathy_ds['lon'].values
+    
+    # Helper function to find the nearest grid indices for a given lat/lon point
+    def find_nearest_indices(lat, lon):
+        lat_idx = np.abs(lat_grid - lat).argmin()
+        lon_idx = np.abs(lon_grid - lon).argmin()
+        return lat_idx, lon_idx
+    
+    # # Get indices for start, end, and current points
+    # start_idx = find_nearest_indices(*start)
+    # end_idx = find_nearest_indices(*end)
+    # logging.error(f"The start point is: {start}")
+    # logging.error(f"Indices of start point are: {start_idx}")
+    # logging.error(f"The end point is: {end}")
+    # logging.error(f"Indices of end point are: {end_idx}")
+    current_idx = find_nearest_indices(*current)
+    # near_lat = lat_grid[current_idx[0]]
+    # near_lon = lon_grid[current_idx[1]]
+
+
+    # Initialize minimum distance and closest point
+    min_distance = float('inf')
+    closest_point = None
+    closest_index = 0
+    total_index = 0
+    
+    # Iterate over each row and calculate Euclidean distance
+    for index, row in path_df.iterrows():
+        
+        lat, lon = row['Latitude'], row['Longitude']
+        distance = np.sqrt((lat - current[0]) ** 2 + (lon - current[1]) ** 2)
+        
+        # Update the closest point if a smaller distance is found
+        if distance < min_distance:
+            min_distance = distance
+            closest_point = row
+            closest_index = total_index
+
+        total_index += 1
+
+    logging.error(f"DISTANCE FROM START: {closest_index}")
+    logging.error(f"DISTANCE FROM END: {total_index - closest_index}")
+    return closest_index, total_index-closest_index
+    
+    # logging.error(f"INDICE {find_row_index(path_df, near_lat, near_lon)}")
+    # logging.error(f"{bathy_ds['bathy'][current_idx[0], current_idx[1]]}")
+    # , bathy_ds['bathy'][current_idx[1]])}")
+    
+    # # Path Distance (following path in path_ds)
+    # path_var = path_ds['bathy'].values  # Replace 'path' with actual path variable name
+    
+    # # Function to calculate path distance by traversing path cells
+    # def traverse_path(start_idx, target_idx):
+    #     distance = 0
+    #     visited = set()
+    #     current = start_idx
+        
+    #     while current != target_idx:
+    #         visited.add(current)
+    #         # Find neighboring cells on the path
+    #         neighbors = [
+    #             (current[0] + 1, current[1]), (current[0] - 1, current[1]),
+    #             (current[0], current[1] + 1), (current[0], current[1] - 1)
+    #         ]
+    #         # Select the next cell on the path that hasn't been visited
+    #         next_cell = None
+    #         for n in neighbors:
+    #             if n not in visited and 0 <= n[0] < path_var.shape[0] and 0 <= n[1] < path_var.shape[1] and path_var[n] == 1:
+    #                 next_cell = n
+    #                 break
+            
+    #         if not next_cell:  # If we reach a dead-end, the path is broken
+    #             return None
+            
+    #         # Add distance (assuming a unit grid, otherwise use actual distances)
+    #         distance += 1
+    #         current = next_cell
+        
+    #     return distance
+    
+    # path_distance_start = traverse_path(start_idx, current_idx)
+    # path_distance_end = traverse_path(current_idx, end_idx)
+
+    path_distance_start, path_distance_end = None, None
+    # return path_distance_start, path_distance_end
+
+
+################################################
+#
+# REFACTORING === mean_angle
+#
+################################################
 
 def mean_angle(angles):
     # Convert angles from degrees to radians
@@ -361,33 +511,6 @@ def calculate_angle(previous, current, candidate, distance_previous_current=None
     return angle_deg
 
 
-# ################################################
-# #
-# # get adjacent directions
-# #
-# ################################################
-
-# def get_adjacent_directions(item, permissive=False):
-
-#     directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-
-#     # Find the index of the item
-#     index = directions.index(item)
-
-#     # Get the previous and next items using modular arithmetic for cyclic behavior
-#     previous_item = directions[(index - 1) % len(directions)]
-#     next_item = directions[(index + 1) % len(directions)]
-
-#     # If permissive is True, include two more adjacent items
-#     if permissive:
-#         previous_item_far = directions[(index - 2) % len(directions)]
-#         next_item_far = directions[(index + 2) % len(directions)]
-#         return [previous_item_far, previous_item, next_item, next_item_far]
-    
-#     # return
-#     return [previous_item, next_item]
-
-
 ################################################
 #
 # load netcdf
@@ -454,366 +577,6 @@ def find_closest_index(ds, lat, lon):
     lat_idx = np.abs(ds['lat'].values - lat).argmin()
     lon_idx = np.abs(ds['lon'].values - lon).argmin()
     return lat_idx, lon_idx
-
-
-
-# ################################################
-# #
-# # get direction
-# #
-# ################################################
-
-# def get_allowed_directions_complex_trend(trend, permissive=False):
-#     """
-#     Determine the allowed direction based on the complex trend
-#     """
-
-#     # find the number of occurrences for each direction
-#     direction_counts = Counter(trend)
-#     sorted_directions = dict(sorted(direction_counts.items(), key=lambda x: x[1], reverse=True))
-
-
-#     # Calculate percentage and store it along with counts in an ordered dictionary
-#     sorted_directions_with_percentage = {
-#         direction: {
-#             'count': count,
-#             'percentage': (count / len(trend)) * 100
-#         }
-#         for direction, count in sorted(direction_counts.items(), key=lambda x: x[1], reverse=True)
-#     }
-    
-#     # start building a list of allowed direction by
-#     # putting the most frequent with a maximum score (e.g. N:9)
-#     # and its adjacent ones with lower score (e.g. NE: and NW:)
-#     allowed_directions = []
-#     for direction, stats in sorted_directions_with_percentage.items():
-        
-#         # if the list is still empty, add the most frequent
-#         # item, no matter its percentage
-#         if len(allowed_directions) == 0:
-#             allowed_directions.append(direction)
-#             adj = get_adjacent_directions(direction, permissive)
-#             for el in adj:
-#                 allowed_directions.append(el)
-
-#         # consider all the other occurrences after the first
-#         else:
-#             if stats["percentage"] >= 30:
-#                 if not direction in allowed_directions:
-#                     allowed_directions.append(direction)
-#                 adj = get_adjacent_directions(direction, permissive)
-#                 for el in adj:
-#                     if not el in allowed_directions:
-#                         allowed_directions.append(el)
-#             else:
-#                 break    
-    
-#     return allowed_directions
-
-
-
-# ################################################
-# #
-# # get direction
-# #
-# ################################################
-
-# def get_allowed_directions_unified(trend, lastDirection, permissive=False):
-#     """
-#     Determine the allowed direction based on the complex trend
-#     """
-
-#     # find the number of occurrences for each direction
-#     direction_counts = Counter(trend)
-#     sorted_directions = dict(sorted(direction_counts.items(), key=lambda x: x[1], reverse=True))
-
-
-#     # Calculate percentage and store it along with counts in an ordered dictionary
-#     sorted_directions_with_percentage = {
-#         direction: {
-#             'count': count,
-#             'percentage': (count / len(trend)) * 100
-#         }
-#         for direction, count in sorted(direction_counts.items(), key=lambda x: x[1], reverse=True)
-#     }
-
-
-#     # ======= Create the list of the trend-allowed directions =======
-
-#     allowed_directions = []            
-#     if trend:
-    
-#         # start building a list of allowed direction by
-#         # putting the most frequent with a maximum score (e.g. N:9)
-#         # and its adjacent ones with lower score (e.g. NE: and NW:)
-#         for direction, stats in sorted_directions_with_percentage.items():
-            
-#             # if the list is still empty, add the most frequent
-#             # item, no matter its percentage
-#             if len(allowed_directions) == 0:
-#                 allowed_directions.append(direction)
-#                 adj = get_adjacent_directions(direction, permissive)
-#                 for el in adj:
-#                     allowed_directions.append(el)
-    
-#             # consider all the other occurrences after the first
-#             else:
-#                 if stats["percentage"] >= 30:
-#                     if not direction in allowed_directions:
-#                         allowed_directions.append(direction)
-#                     adj = get_adjacent_directions(direction, permissive)
-#                     for el in adj:
-#                         if not el in allowed_directions:
-#                             allowed_directions.append(el)
-#                 else:
-#                     break    
-                
-#     # ======= Create the scores based on the last direction =======
-
-#     scores = { "N": 0, "NE": 0, "E": 0, "SE": 0, "S": 0, "SW": 0, "W": 0, "NW": 0 }
-#     dir_last = get_adjacent_directions(lastDirection, True)
-#     scores[dir_last[0]] = 1
-#     scores[dir_last[1]] = 5
-#     scores[dir_last[2]] = 5
-#     scores[dir_last[3]] = 1
-#     scores[lastDirection] = 9
-
-#     # ======= Sum 10 to the score for each direction in the trend-allowed dirs =======
-
-#     for d in scores.keys():
-#         if d in allowed_directions:
-#             scores[d] += 10
-
-#     # return
-#     return scores
-
-
-
-
-# ################################################
-# #
-# # get direction
-# #
-# ################################################
-
-# def get_direction(current_idx, target_idx):
-#     """
-#     Determine the direction from the current index to the target index.
-#     """
-#     d_lat = target_idx[0] - current_idx[0]
-#     d_lon = target_idx[1] - current_idx[1]
-
-#     # if d_lat == 0 and d_lon > 0:
-#     #     return "E"
-#     # elif d_lat == 0 and d_lon < 0:
-#     #     return "W"
-#     # elif d_lat > 0 and d_lon == 0:
-#     #     return "S"
-#     # elif d_lat < 0 and d_lon == 0:
-#     #     return "N"
-#     # elif d_lat > 0 and d_lon > 0:
-#     #     return "SE"
-#     # elif d_lat > 0 and d_lon < 0:
-#     #     return "SW"
-#     # elif d_lat < 0 and d_lon > 0:
-#     #     return "NE"
-#     # elif d_lat < 0 and d_lon < 0:
-#     #     return "NW"
-#     # else:
-#     #     return "Unknown"
-    
-#     if d_lat == 0 and d_lon > 0:
-#         return "E"
-#     elif d_lat == 0 and d_lon < 0:
-#         return "W"
-#     elif d_lat > 0 and d_lon == 0:
-#         return "N"
-#     elif d_lat < 0 and d_lon == 0:
-#         return "S"
-#     elif d_lat > 0 and d_lon > 0:
-#         return "NE"
-#     elif d_lat > 0 and d_lon < 0:
-#         return "NW"
-#     elif d_lat < 0 and d_lon > 0:
-#         return "SE"
-#     elif d_lat < 0 and d_lon < 0:
-#         return "SW"
-#     else:
-#         return "Unknown"
-
-
-# ################################################
-# #
-# # direction similarity
-# #
-# ################################################
-    
-# def direction_similarity(direction1, direction2):
-#     """
-#     Measure the similarity between two directions.
-#     """
-
-#     vector1 = DIRECTIONS.get(direction1, (0, 0))
-#     vector2 = DIRECTIONS.get(direction2, (0, 0))
-#     dot_product = vector1[0] * vector2[0] + vector1[1] * vector2[1]
-
-#     return dot_product
-
-
-
-
-
-
-
-
-
-# ################################################
-# #
-# # direction distance score
-# #
-# ################################################
-
-# def direction_distance_score(dir1, dir2, trend=None):
-#     """
-#     Calculate the minimal angular distance between two compass directions and assign a score inversely proportional to the distance.
-
-#     Parameters:
-#     - dir1: str, first direction (e.g., 'N', 'NE', 'E', etc.)
-#     - dir2: str, second direction
-
-#     Returns:
-#     - minimal_distance_steps: int, minimal number of steps between directions
-#     - minimal_distance_degrees: int, minimal angular distance in degrees
-#     - score: float, score inversely proportional to the angular distance
-#     """
-#     directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-#     direction_map = {direction: index for index, direction in enumerate(directions)}
-    
-#     # Validate input directions
-#     if dir1 not in direction_map or dir2 not in direction_map:
-#         raise ValueError("Invalid direction. Choose from 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'.")
-    
-#     idx1 = direction_map[dir1]
-#     idx2 = direction_map[dir2]
-    
-#     # Compute absolute difference
-#     diff = abs(idx1 - idx2)
-    
-#     # Since the list is cyclic, the minimal distance is the smaller between
-#     # the direct difference and the wrap-around difference
-#     minimal_steps = min(diff, len(directions) - diff)
-    
-#     # Each step represents 45 degrees
-#     minimal_distance_degrees = minimal_steps * 45
-
-#     # Calculate score inversely proportional to degrees
-#     # Handle the case where degrees = 0 to avoid division by zero
-#     if minimal_distance_degrees == 0:
-#         score = 1.0  # Assign maximum score when directions are the same
-#     else:
-#         score = 1 / minimal_distance_degrees  # Inverse proportionality
-
-#     # check if we are in the range of 180 degrees centered on the direction
-#     if trend:
-#         if minimal_distance_degrees > 45:
-#             score = 0
-#     else:
-#         if minimal_distance_degrees > 90:
-#             score = 0        
-        
-#     # Optional: Normalize the score to a range (e.g., 0 to 1)
-#     # For example, maximum possible score is when degrees = 0 (score = 1.0)
-#     # Minimum possible score is when degrees = 180 (score = 1/180 ≈ 0.0056)
-#     # If desired, you can scale the score differently
-#     return minimal_steps, minimal_distance_degrees, score
-
-
-
-
-
-
-
-
-# ################################################
-# #
-# # lastdir score
-# #
-# ################################################
-
-# def get_lastdir_score(dir1, dir2):
-
-#     directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-#     direction_map = {direction: index for index, direction in enumerate(directions)}
-    
-#     # Validate input directions
-#     if dir1 not in direction_map or dir2 not in direction_map:
-#         raise ValueError("Invalid direction. Choose from 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'.")
-    
-#     idx1 = direction_map[dir1]
-#     idx2 = direction_map[dir2]
-    
-#     # Compute absolute difference
-#     diff = abs(idx1 - idx2)
-    
-#     # Since the list is cyclic, the minimal distance is the smaller between
-#     # the direct difference and the wrap-around difference
-#     minimal_steps = min(diff, len(directions) - diff)
-    
-#     # Each step represents 45 degrees
-#     minimal_distance_degrees = minimal_steps * 45
-
-#     # Calculate score inversely proportional to degrees
-#     # Handle the case where degrees = 0 to avoid division by zero
-#     if minimal_distance_degrees == 0:
-#         score = 0  # Assign maximum score when directions are the same
-#     else:
-#         score = minimal_distance_degrees  # Inverse proportionality
-
-#     # return the score
-#     return score
-
-
-
-
-
-
-
-# ################################################
-# #
-# # find_most_frequent_direction
-# #
-# ################################################
-
-# def find_most_frequent_direction(directions):
-
-#     """
-#     Determine the most frequent direction from a list of directions.
-#     """
-
-#     if not directions:
-#         return None
-#     counter = Counter(directions)
-#     most_common = counter.most_common(1)
-#     return most_common[0][0] if most_common else None
-
-
-
-
-# ################################################
-# #
-# # get trend score
-# #
-# ################################################
-
-# def get_trend_score(trend, direction):
-
-#     # if we are in the init phase, we skip this
-#     if len(trend) <= 10:
-#         return 0
-    
-#     else:
-#         pass
-
 
 
 ################################################
@@ -906,459 +669,6 @@ def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max
         trows
     )
     logging.info(table)
-    
-    # print(candidates)
-    
-    # rows = []
-    # for lat_idx in range(lat_min, lat_max):
-    #     row = []
-    #     for lon_idx in range(lon_min, lon_max):
-
-    #         # costruisci un dizionario dei candidati
-    #         candict = {f"{candidate['lat_idx']}{candidate['lon_idx']}": candidate for candidate in candidates}
-            
-    #         # Recupera il valore della profondità
-    #         value = bathy[lat_idx, lon_idx]
-    #         rounded_value = round(value, 3) if not np.isnan(value) else "NaN"
-    #         formatted_value = f"{rounded_value:>8}"
-
-    #         # check if we have the angle
-    #         if f"{lat_idx}{lon_idx}" in candict.keys():
-    #             logging.info(candict[f"{lat_idx}{lon_idx}"]["angle"])
-    #             angle = candict[f"{lat_idx}{lon_idx}"]["angle"]
-    #             if angle:
-    #                 row.append(f"{formatted_value} ({angle})")
-    #             else:
-    #                 row.append(f"{formatted_value}")
-    #         else:
-    #             row.append("BOH")
-                    
-    #         # else:
-    #         #     row.append(formatted_value_with_angle = f"{formatted_value}")
-                
-    #         # row.append(colored(f"{formatted_value}", 'green'))
-
-
-    #         # # Controlla se la cella è il punto selezionato
-    #         # if (lat_idx, lon_idx) == selected:
-    #         #     row.append(colored(f"{formatted_value}", 'green'))
-            
-    #         # # Controlla se la cella è un candidato
-    #         # elif (lat_idx, lon_idx) in [(lat, lon) for lat, lon, _ in candidates]:
-    #         #     # Recupera l'angolo del candidato specifico
-    #         #     angle = next((angle for lat, lon, angle in candidates if (lat, lon) == (lat_idx, lon_idx)), None)
-    #         #     formatted_value_with_angle = f"{formatted_value} ({angle}°)"
-
-    #         #     # Aggiungi l'asterisco se la cella è il punto selezionato
-    #         #     if (lat_idx, lon_idx) == (selected[0], selected[1]):
-    #         #         row.append(colored(formatted_value_with_angle, 'green', attrs=["bold"]))
-    #         #     else:
-    #         #         row.append(colored(formatted_value_with_angle, 'green'))
-
-    #         # # Per le altre celle
-    #         # else:
-    #         #     row.append(formatted_value)
-                
-    #     rows.append(" ".join(row))
-
-    # # Stampa la griglia al contrario per mantenere l'orientamento corretto
-    # for el in rows[::-1]:
-    #     logging.info(el)
-
-        
-# def print_neighborhood(bathy, lat_min, lat_max, lon_min, lon_max, candidates, selected):
-#     """
-#     Print the neighborhood grid, highlighting candidates and the selected one.
-#     """
-
-#     rows = []
-#     for lat_idx in range(lat_min, lat_max):
-#         row = []
-#         for lon_idx in range(lon_min, lon_max):
-#             value = bathy[lat_idx, lon_idx]
-#             rounded_value = round(value, 3) if not np.isnan(value) else "NaN"
-#             formatted_value = f"{rounded_value:>8}"
-#             if (lat_idx, lon_idx) == selected:
-#                 row.append(colored(f"{formatted_value}", 'green'))
-#             elif (lat_idx, lon_idx) in [(lat, lon) for lat, lon, _ in candidates]:
-
-#                 # Check if this cell is the selected one and append an asterisk
-#                 if selected:
-                
-#                     if (lat_idx, lon_idx) == (selected[0], selected[1]):
-#                         row.append(colored(formatted_value, 'green', attrs=["bold"]))
-#                     else:
-#                         row.append(colored(formatted_value, 'green'))
-                               
-#             else:
-#                 row.append(formatted_value)
-#         rows.append(" ".join(row))
-
-#     for el in rows[::-1]:
-#         logging.info(el)
-    
-    # for lat_idx in range(lat_min, lat_max):
-    #     row = []
-    #     for lon_idx in range(lon_min, lon_max):
-    #         value = bathy[lat_idx, lon_idx]
-    #         rounded_value = round(value, 3) if not np.isnan(value) else "NaN"
-    #         formatted_value = f"{rounded_value:>8}"
-    #         if (lat_idx, lon_idx) == selected:
-    #             row.append(colored(f"**{formatted_value}**", 'green'))
-    #         elif (lat_idx, lon_idx) in [(lat, lon) for lat, lon, _ in candidates]:
-    #             row.append(colored(formatted_value, 'green'))
-    #         else:
-    #             row.append(formatted_value)
-    #     logging.info(" ".join(row))
-
-        
-# ################################################
-# #
-# # find_highest_bathy
-# #
-# ################################################
-
-# def find_highest_bathy(ds, config):
-
-#     """
-#     Find the highest bathy point in the neighborhood of size windowSize
-#     around the given start latitude and longitude. Save the path taken in a CSV file.
-#     """
-#     try:
-#         bathy = ds['bathy'].values
-        
-#         # Start from the initial coordinates and find the closest grid cell indices
-#         current_lat_idx, current_lon_idx = find_closest_index(ds, config['Input']['startLat'], config['Input']['startLon'])
-        
-#         # Output CSV file setup
-#         csv_path = os.path.join(config['Output']['baseFolder'], config['Output']['thalwegCsvFile'])
-#         with open(csv_path, mode='w', newline='') as csvfile:
-#             csv_writer = csv.writer(csvfile)
-#             csv_writer.writerow(['Latitude', 'Longitude', 'Depth', 'Direction'])
-            
-#             # Write the starting point to the CSV without rounding
-#             start_depth = bathy[current_lat_idx, current_lon_idx]
-#             csv_writer.writerow([config['Input']['startLat'], config['Input']['startLon'], start_depth, "None"])
-
-#         # Keep track of visited cells
-#         visited_cells = set()
-#         directions_taken = []
-#         last_direction = config['Input']['initialDirection']
-
-#         # ====== Start main loop ======
-
-#         lastDirection = config['Input']['initialDirection']
-#         retry = False
-#         for i in range(config['Input']['maxIterations']):
-
-#             # ====== Get current item and see if we're close to the end point ======
-            
-#             # Get the current latitude, longitude, and depth
-#             current_lat = ds['lat'].values[current_lat_idx]
-#             current_lon = ds['lon'].values[current_lon_idx]
-#             current_depth = bathy[current_lat_idx, current_lon_idx]
-
-#             logging.info("\n")
-#             logging.info(f"Iteration {i + 1}: Current Position {current_lat}, {current_lon}, Indices: ({current_lat_idx}, {current_lon_idx})")
-#             logging.info(directions_taken[-10:])
-#             logging.info(last_direction)            
-            
-#             # Check if the current position is close to the endpoint
-#             distance_to_end = calculate_distance(current_lat, current_lon, config["Input"]["endLat"], config["Input"]["endLon"])
-#             if distance_to_end <= config["Input"]["endDistance"]:
-#                 logging.info(f"Reached endpoint proximity: {distance_to_end:.2f} meters from the target point. Stopping.")
-#                 break
-
-#             # Write the current position to the CSV without rounding
-#             with open(csv_path, mode='a', newline='') as csvfile:
-#                 csv_writer = csv.writer(csvfile)
-#                 csv_writer.writerow([current_lat, current_lon, current_depth, directions_taken[-1] if directions_taken else "None"])
-                
-#             # Mark the current cell as visited by setting its value to NaN
-#             bathy[current_lat_idx, current_lon_idx] = np.nan
-#             visited_cells.add((current_lat_idx, current_lon_idx))
-
-#             # ====== Determine neighborhood ======
-            
-#             # Determine the neighborhood bounds based on full window size
-#             if retry:
-#                 half_window = config['Input']['windowSize']+4 // 2 # increase the window size
-#             else:
-#                 half_window = config['Input']['windowSize'] // 2
-                
-                
-#             lat_min = max(0, current_lat_idx - half_window)
-#             lat_max = min(bathy.shape[0], current_lat_idx + half_window + 1)
-#             lon_min = max(0, current_lon_idx - half_window)
-#             lon_max = min(bathy.shape[1], current_lon_idx + half_window + 1)
-
-#             # # ====== find candidates based on depth ======
-            
-#             # # Find the highest bathy in the neighborhood, considering tolerance and direction
-#             # highest_bathy = -np.inf
-#             # candidates = []
-
-#             # for lat_idx in range(lat_min, lat_max):
-#             #     for lon_idx in range(lon_min, lon_max):
-#             #         if not np.isnan(bathy[lat_idx, lon_idx]):
-#             #             if bathy[lat_idx, lon_idx] >= highest_bathy - config['Input']['depthTolerance']:
-#             #                 highest_bathy = max(highest_bathy, bathy[lat_idx, lon_idx])
-#             #                 candidates.append((lat_idx, lon_idx, bathy[lat_idx, lon_idx]))                            
-
-#             # # Filter candidates within the tolerance range
-#             # candidates = [(lat, lon, val) for lat, lon, val in candidates if val >= highest_bathy - config['Input']['depthTolerance']]
-
-#             # if not candidates:
-#             #     logging.info("All points in the neighborhood are visited or NaN; stopping.")
-#             #     break
-
-#             # # ====== Determine score of directions for this iteration ======
-            
-#             # # initialise the best candidate
-#             # preferred_direction = config['Input']['initialDirection'] if i < config['Input']['initPhase'] else last_direction
-#             # best_candidate = None
-#             # best_similarity = np.inf
-            
-#             # # debug message: print the allowed directions based on trend:            
-#             # allowed_dirs_trend = get_allowed_directions_complex_trend(directions_taken[-10:])
-#             # logging.info(f"Allowed directions by complex trend: {allowed_dirs_trend}")
-
-#             # # debug message: print the allowed directions based on last movement (if any)
-#             # if i > 0:
-#             #     allowed_dirs_last = get_adjacent_directions(lastDirection, True)
-#             #     allowed_dirs_last.append(lastDirection)
-#             # else:
-#             #     allowed_dirs_last = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']             
-#             # logging.info(f"Allowed directions by last direction: {allowed_dirs_last}")
-
-#             # # calculate the score --- G FUNCTION
-#             # if i >= 10:
-#             #     score = get_allowed_directions_unified(directions_taken[-10:], directions_taken[-1:][0], permissive=False)
-#             # else:
-#             #     score = get_allowed_directions_unified([], lastDirection, permissive=False)
-#             # logging.info(f"{score}")
-
-            
-#             ##########################################################
-#             # ATTEMPT OF NEW EURISTIC == start
-#             ##########################################################
-
-#             # iterate over the cells
-            
-#             # Find the highest bathy in the neighborhood, considering tolerance and direction
-#             highest_bathy = -np.inf
-#             candidates = []
-
-#             # first of all, look for the maximum bathymetry value
-#             for lat_idx in range(lat_min, lat_max):
-#                 for lon_idx in range(lon_min, lon_max):
-                    
-#                     # if the current point is not nan and is deeper than the current max, update the max!
-#                     if not np.isnan(bathy[lat_idx, lon_idx]):
-#                         if bathy[lat_idx, lon_idx] >= highest_bathy:
-#                             highest_bathy = bathy[lat_idx, lon_idx]
-                            
-#             # now iterate on all the items and assign a score
-#             for lat_idx in range(lat_min, lat_max):
-#                 for lon_idx in range(lon_min, lon_max):
-
-#                     # if the current point is not nan and is in max-tolerance range, assign 0. Otherwise 1
-#                     if not np.isnan(bathy[lat_idx, lon_idx]):
-
-                        
-#                         candidate_direction = get_direction((current_lat_idx, current_lon_idx), (lat_idx, lon_idx))
-#                         # trend_score = direction_distance_score(directions[-10:], candidate_direction)
-                        
-                        
-#                         if bathy[lat_idx, lon_idx] >= highest_bathy - config['Input']['depthTolerance']:                            
-#                             # calculate the three components of the G score
-#                             weight_score = 0
-#                             lastdir_score = get_lastdir_score(lastDirection, candidate_direction)
-#                             # trend_score = get_trend_score()
-
-#                             # calculate G
-#                             g = 0 + lastdir_score
-
-#                             # calculate H
-#                             h = distance_to_end
-
-#                             # calculate F = G + H
-#                             f = g + h
-#                             candidates.append((lat_idx, lon_idx, bathy[lat_idx, lon_idx], f))
-                            
-#                         else:
-
-#                             # calculate the three components of the G score
-#                             weight_score = 1
-#                             lastdir_score = get_lastdir_score(lastDirection, candidate_direction)
-#                             # trend_score = get_trend_score()
-
-#                             # calculate G
-#                             g = 1 + lastdir_score
-
-#                             # calculate H
-#                             h = distance_to_end
-
-#                             # calculate F = G + H
-#                             f = g + h
-#                             candidates.append((lat_idx, lon_idx, bathy[lat_idx, lon_idx], f))                            
-
-#             # find the best candidate
-#             best_score = np.inf
-#             best_candidate = None
-#             for c in candidates:
-                
-                
-#                 if c[3] < best_score:
-#                     logging.info(f"Updating best from {best_score} to {c[3]}")
-#                     best_score = c[3]
-#                     best_candidate = c
-#                     logging.info(f"Updated best to {best_score}")
-#                 logging.info(f"Candidate: {c[0]}, {c[1]} -- Depth: {c[2]} -- Score: {c[3]}")
-            
-#             logging.info(f"Best candidate is {best_candidate[0]}, {best_candidate[1]} -- Depth: {best_candidate[2]} -- Score: {best_candidate[3]}")
-                
-                            
-#             # ##########################################################
-#             # # ATTEMPT OF NEW EURISTIC == end
-#             # ##########################################################
-
-            
-#             # # ======= Assign a score to the candidates =======
-
-#             # # initialize current score
-#             # currentScore = 0
-                        
-#             # # iterate over candidates
-#             # good_candidates = []
-#             # logging.info("Candidates:")            
-#             # for lat_idx, lon_idx, val in candidates:
-
-#             #     # get the direction of the new candidate
-#             #     direction = get_direction((current_lat_idx, current_lon_idx), (lat_idx, lon_idx))
-                                    
-#             #     # Print direction along with other details
-#             #     candidate_info = f"Lat: {float(ds['lat'][lat_idx])}, Lon: {float(ds['lon'][lon_idx])}, " \
-#             #         f"Indices: ({lat_idx}, {lon_idx}) - " \
-#             #         f"Depth: {np.round(val, 3)}, Direction: {direction}, Score: {score[direction]}"
-                
-#             #     ### Should be updated the best candidate?
-#             #     if score[direction] > currentScore:
-#             #         currentScore = score[direction]
-#             #         best_candidate = (lat_idx, lon_idx, direction)
-                                                                                   
-#             #     logging.info(colored(candidate_info, 'green' if (lat_idx, lon_idx) == best_candidate else None))
-            
-#             # # Log the neighborhood
-#             # try:
-#             #     print_neighborhood(bathy, lat_min, lat_max, lon_min, lon_max, candidates, best_candidate)
-#             # except:
-#             #     logging.error(traceback.print_exc())
-#             #     pdb.set_trace()
-                
-#             # for lat_idx, lon_idx, val in candidates:
-#             #     direction = get_direction((current_lat_idx, current_lon_idx), (lat_idx, lon_idx))
-#             #     similarity_to_last = direction_similarity(direction, preferred_direction)
-#             #     similarity_to_frequent = direction_similarity(direction, most_frequent_direction) if most_frequent_direction else 0
-#             #     score = similarity_to_last + similarity_to_frequent
-#             #     candidate_info = f"Lat: {np.round(float(ds['lat'][lat_idx]), 3)}, Lon: {np.round(float(ds['lon'][lon_idx]), 3)}, Score: {score} (Last: {similarity_to_last}, Last10: {similarity_to_frequent})"
-
-#             #     if score > best_similarity:
-#             #         best_similarity = score
-#             #         best_candidate = (lat_idx, lon_idx, direction)
-
-#                 # logging.info(colored(candidate_info, 'green' if (lat_idx, lon_idx) == best_candidate else None))
-
-#             if len(candidates) == 0:
-#                 logging.info("No suitable candidate found; stopping (1).")
-#                 break
-
-
-#             sys.exit()
-            
-#             # if not best_candidate:
-#             #     logging.info("No suitable candidate found; stopping (2).")
-#             #     break
-
-#             ##########################################################
-#             # ATTEMPT OF RELAXATION == start
-#             ##########################################################
-
-#             if not best_candidate:
-
-#                 if not retry:
-                
-#                     logging.error(colored("ERROR -- retrying", "red", attrs=["bold"]))
-#                     retry = True
-#                     i = i - 1
-#                     continue
-
-#                 else:
-#                     logging.error(colored("ERROR -- retrying failed -- stopping", "red", attrs=["bold"]))
-#                     break
-                
-#             else:
-#                 retry = False
-                
-#             ##########################################################
-#             # ATTEMPT OF RELAXATION == end
-#             ##########################################################
-
-
-#             if best_candidate:
-#                 highest_lat_idx, highest_lon_idx, chosen_direction, score = best_candidate
-#                 selected_lat = ds['lat'].values[highest_lat_idx]
-#                 selected_lon = ds['lon'].values[highest_lon_idx]
-#                 selected_depth = bathy[highest_lat_idx, highest_lon_idx]
-                
-#                 # Log selected cell details
-#                 logging.info(f"Selected cell: Lat: {float(selected_lat)}, Lon: {float(selected_lon)}, "
-#                              f"Indices: ({highest_lat_idx}, {highest_lon_idx}), Depth: {selected_depth}")
-            
-#             highest_lat_idx, highest_lon_idx, chosen_direction = best_candidate
-#             # Log and update the direction
-#             logging.info(f"Moving direction: {chosen_direction}")
-#             directions_taken.append(chosen_direction)
-#             last_direction = chosen_direction
-
-#             # Move to the cell with the highest bathy
-#             current_lat_idx = highest_lat_idx
-#             current_lon_idx = highest_lon_idx
-
-#             # update last direction
-#             lastDirection = chosen_direction
-            
-
-#             # if best_candidate:
-#             #     highest_lat_idx, highest_lon_idx, chosen_direction = best_candidate
-#             #     selected_lat = ds['lat'].values[highest_lat_idx]
-#             #     selected_lon = ds['lon'].values[highest_lon_idx]
-#             #     selected_depth = bathy[highest_lat_idx, highest_lon_idx]
-                
-#             #     # Log selected cell details
-#             #     logging.info(f"Selected cell: Lat: {float(selected_lat)}, Lon: {float(selected_lon)}, "
-#             #                  f"Indices: ({highest_lat_idx}, {highest_lon_idx}), Depth: {selected_depth}")
-            
-#             # highest_lat_idx, highest_lon_idx, chosen_direction = best_candidate
-#             # # Log and update the direction
-#             # logging.info(f"Moving direction: {chosen_direction}")
-#             # directions_taken.append(chosen_direction)
-#             # last_direction = chosen_direction
-
-#             # # Move to the cell with the highest bathy
-#             # current_lat_idx = highest_lat_idx
-#             # current_lon_idx = highest_lon_idx
-
-#             # # update last direction
-#             # lastDirection = chosen_direction
-                        
-#         # Log all directions taken
-#         logging.info("Directions taken during the iterations:")
-#         logging.info(directions_taken)
-
-#     except Exception as e:
-#         logging.error(f"Error during bathy analysis: {e}")
-#         raise
 
 
 ################################################
@@ -1367,7 +677,7 @@ def print_neighborhood(current_lat_idx, current_lon_idx, bathy, lat_min, lat_max
 #
 ################################################
 
-def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=None, start_counter=0):
+def find_highest_bathy(ds, path_ds, path_df, config, start_lat=None, start_lon=None, start_dir=None, start_counter=0, distance_from_start=0):
 
     """
     Find the highest bathy point in the neighborhood of size windowSize
@@ -1376,7 +686,11 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
 
     # initialise restart
     restart = False
-    
+    comebackAlert = False
+    comebackCount = 0
+    comebackStart = None
+
+   
     try:
         
         bathy = ds['bathy'].values
@@ -1409,6 +723,14 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
         else:
 
             logging.info(colored("RESTART RUN", "red", attrs=["bold"]))
+
+            
+            # calculate the distance from start and end point
+            start_point = (config['Input']['startLat'], config['Input']['startLon'])
+            end_point = (config['Input']['endLat'], config['Input']['endLon'])
+            current = (start_lat, start_lon)
+            d_from_start, d_from_end = get_path_distance(ds, path_ds, path_df, start_point, end_point, current)
+            distance_from_start = d_from_start
             
             # we are on a restart condition
             current_lat_idx, current_lon_idx = find_closest_index(ds, start_lat, start_lon)
@@ -1460,7 +782,6 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
             lat_max = min(bathy.shape[0], current_lat_idx + half_window + 1)
             lon_min = max(0, current_lon_idx - half_window)
             lon_max = min(bathy.shape[1], current_lon_idx + half_window + 1)
-
 
             # ====== Analyse the neighborhood ======
             
@@ -1586,6 +907,87 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
 
                 # update the csv
                 csv_writer.writerow([best_candy['lat'], best_candy['lon'], best_candy["depth"], best_direction])
+
+
+                # ========= check for comeback =========
+                
+                # calculate the distance from start and end point
+                start_point = (config['Input']['startLat'], config['Input']['startLon'])
+                end_point = (config['Input']['endLat'], config['Input']['endLon'])
+                current = (best_candy["lat"], best_candy["lon"])
+                d_from_start, d_from_end = get_path_distance(ds, path_ds, path_df, start_point, end_point, current)               
+                
+                # check if we are going close to start point (and we should not!)
+                if comebackAlert: # if we are already on alert:
+
+                    if d_from_start < distance_from_start: # the comeback goes on
+
+                        # increment the count of consecutive points
+                        comebackCount += 1
+
+                        # have we reached the 5 comeback position?
+                        if comebackCount == 5:
+
+                            # notify the user                        
+                            logging.info(f"============== COMEBACK IDENTIFIED -- Let's start again from last good position! ({comebackPosition}) ===================")
+                            
+                            # exit from the procedure and make it restart from the comebackStart point
+                            return True, comebackPosition[0], comebackPosition[1], comebackDirection, i-5, comebackStart
+                        
+                        else:
+                        
+                            # notify the user                        
+                            logging.info(f"============== RISCHIO COMEBACK -- {comebackCount} --  {current} ===================")
+                        
+                    else: # the comeback stops here
+
+                        # reset counter, restart position and alert status
+                        comebackAlert = False
+                        comebackCount = 0
+                        comebackStart = None
+                        
+                        # notify the user                        
+                        logging.info(f"============== COMEBACK SCONGIURATO ===================")
+                        
+                else: # this is a new risk for comeback
+
+                    if d_from_start < distance_from_start:
+
+                        # start counting the number of consecutive comeback points
+                        comebackCount += 1
+
+                        # save the current position, because if we reach 5 consecutive
+                        # comeback points, we start again from this point. Also save dir
+                        comebackPosition = current
+                        comebackDirection = mean_angle(history[-10:]) # lastDirection
+                        logging.error(f"TREND DIRECTION SET TO {comebackDirection}")
+
+                        # save the distance from start measured at this point
+                        comebackStart = distance_from_start
+
+                        # set the alert status
+                        comebackAlert = True
+                        
+                        # notify the user
+                        logging.info(f"============== RISCHIO COMEBACK -- {comebackCount} -- {current} ===================")
+                    
+                
+
+                
+                # if d_from_start < distance_from_start:
+                #     comebackCount += 1
+                #     logging.error(f"============== RISCHIO COMEBACK -- {comebackCount} ===================")
+                #     if comebackCount == 1:
+                #         comebackStart = distance_from_start
+                #         comebackAlert = True
+
+                # else: # controlliamo lo stesso se eravamo gia in stato di alert
+                #     if comebackAlert:
+                #         if d_from_start < distance_from_start:
+                #             comebackCount += 1
+                #             logging.error(f"============== RISCHIO COMEBACK -- {comebackCount} ===================")
+                                        
+                distance_from_start = d_from_start
                 
             else:
 
@@ -1597,4 +999,5 @@ def find_highest_bathy(ds, config, start_lat=None, start_lon=None, start_dir=Non
         logging.error(f"Error during bathy analysis: {e}")
         raise
 
-    return restart, current_lat, current_lon, np.mean(history[-10:]), i
+    # return restart, current_lat, current_lon, np.mean(history[-10:]), i, distance_from_start
+    return restart, current_lat, current_lon, mean_angle(history[-10:]), i, distance_from_start

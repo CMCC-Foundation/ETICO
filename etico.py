@@ -7,6 +7,7 @@
 ################################################
 
 # global requirements
+import pandas as pd
 import logging
 import sys
 import os
@@ -89,6 +90,8 @@ if __name__ == "__main__":
     ################################################
 
     ds = load_netcdf(config['Input']['inputFile'])
+    path_ds = load_netcdf(os.path.join(config['Output']['baseFolder'], config['Output']['simplifiedNcFile']))
+    path_df = pd.read_csv(os.path.join(config['Output']['baseFolder'], config['Output']['simplifiedCsvFile']))
 
     # intialise restart flag and counter
     restart_points = []
@@ -100,23 +103,29 @@ if __name__ == "__main__":
 
         # invoke the algorithm
         if rest_cnt == 0:
-            restart, current_lat, current_lon, lastDirection, iteration = find_highest_bathy(ds, config)
+            restart, current_lat, current_lon, lastDirection, iteration, distance_start = find_highest_bathy(ds, path_ds, path_df, config)
             logging.info(colored(f"=== RESTART {restart} ===", "blue", attrs=["bold"]))
         else:
             logging.info(colored(f"=== RESTART {restart} ===", "yellow", attrs=["bold"]))
             if restart == True:
+                logging.error("BEH 5")
                 logging.info(colored(f"=== RESTART AT {iteration}, #{rest_cnt} ===", "red", attrs=["bold"]))
-                logging.info(colored(f"=== RESTARTING AT {current_lat}, {current_lon} IN DIRECTION {lastDirection} ===", "red", attrs=["bold"]))            
+                logging.info(colored(f"=== RESTARTING AT {current_lat}, {current_lon} IN DIRECTION {lastDirection} ===", "red", attrs=["bold"]))                
                 input()
-                restart, current_lat, current_lon, lastDirection, iteration = find_highest_bathy(ds, config, current_lat, current_lon, lastDirection, iteration)
-                restart_points.append(iteration)                
+                restart, current_lat, current_lon, lastDirection, iteration, distance_start = find_highest_bathy(ds, path_ds, path_df, config, current_lat, current_lon, lastDirection, iteration, distance_start)
+                restart_points.append(iteration)
+                logging.error("BEH 4")
             
         rest_cnt += 1
+        logging.error("BEH 3")
 
         # stop after 3 iterations
-        if rest_cnt == 3:
+        if rest_cnt == 15:
+            logging.error("BEH 2")
             break
 
+    logging.error("BEH 1")
+        
         
     ################################################
     #
