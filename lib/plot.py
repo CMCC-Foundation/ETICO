@@ -53,8 +53,6 @@ def plot_bathy_with_path(config):
     
     try:
 
-        logging.info("1 ASDFASDFASDFADSFA")
-        
         # Load bathy data from NetCDF file
         ds = xr.open_dataset(netcdf_file)
         if 'bathy' not in ds:
@@ -74,25 +72,20 @@ def plot_bathy_with_path(config):
         upd_path_lats = upd_path_data['Latitude'].values
         upd_path_lons = upd_path_data['Longitude'].values
         
-        logging.info("2 ASDFASDFASDFADSFA")
-        
         # Create the bathymetry plot
         plt.figure()
         fig, ax = plt.subplots(figsize=(10, 8), dpi=600)
 
         # Plot the bathy data as a background
-        plt.imshow(bathy, origin='lower', extent=[lons.min(), lons.max(), lats.min(), lats.max()],
-                   cmap='viridis', aspect='auto')
-        plt.colorbar(label="Depth")
+        plt.imshow(bathy, origin='lower', extent=[lons.min(), lons.max(), lats.min(), lats.max()], cmap=config['Plot']['riverColorMap'], aspect='auto')
+        plt.colorbar(label="Depth (m)")
 
         dot_size = config['Plot']['dotSize']
         dots_interval = config['Plot']['dotsInterval']
 
         # Plot the line
-        plt.plot(path_lons, path_lats, marker='none', color='red', markersize=dot_size, linestyle='-', linewidth=0.2, label="Thalweg")
-        plt.plot(upd_path_lons, upd_path_lats, marker='none', color='black', markersize=dot_size, linestyle='-', linewidth=0.2, label="Improved Thalweg")
-
-        logging.info("3 ASDFASDFASDFADSFA")
+        plt.plot(path_lons, path_lats, marker='none', color=config['Plot']['plotColor'], markersize=dot_size, linestyle='-', linewidth=0.2, label="Thalweg")
+        plt.plot(upd_path_lons, upd_path_lats, marker='none', color=config['Plot']['optiPlotColor'], markersize=dot_size, linestyle='-', linewidth=0.2, label="Improved Thalweg")
         
         # Overlay the path points if plotDots is enabled
         if config['Plot']['plotDots']:
@@ -102,34 +95,20 @@ def plot_bathy_with_path(config):
             path_lons = path_lons[::dots_interval]
             
             # Plot the dots on the path and add index numbers
-            plt.plot(path_lons, path_lats, marker='o', color='red', markersize=dot_size, linestyle='none', linewidth=0.2)
+            plt.plot(path_lons, path_lats, marker='o', color=config['Plot']['plotColor'], markersize=dot_size, linestyle='none', linewidth=0.2)
             
             # Add numbers next to the dots
             for idx, (lat, lon) in enumerate(zip(path_lats, path_lons)):
-                plt.text(lon, lat, str(idx * config["Plot"]["dotsInterval"]), fontsize=config["Plot"]["dotsFontSize"], ha='right', va='bottom', color=config["Plot"]["dotsFontColour"])
-
-            # POSTPROCESSED THALWEG
-
-            # # Use the dots interval to filter the path points
-            # upd_path_lats = upd_path_lats[::dots_interval]
-            # upd_path_lons = upd_path_lons[::dots_interval]
-            
-            # # Plot the dots on the path and add index numbers
-            # plt.plot(path_lons, upd_path_lats, marker='x', color='black', markersize=dot_size, linestyle='none', linewidth=0.2)
-            
-            # # Add numbers next to the dots
-            # for idx, (lat, lon) in enumerate(zip(path_lats, path_lons)):
-            #     plt.text(lon, lat, str(idx * config["Plot"]["dotsInterval"]), fontsize=config["Plot"]["dotsFontSize"], ha='right', va='bottom', color=config["Plot"]["dotsFontColour"])
-
+                plt.text(lon, lat, str(idx * config["Plot"]["dotsInterval"]), fontsize=config["Plot"]["dotsFontSize"], ha='right', va='bottom', color=config["Plot"]["dotsFontColor"])
                 
         # add a marker for start and end points
-        plt.plot(config["Input"]["startLon"], config["Input"]["startLat"], marker=config["Plot"]["startPointMarker"], color=config["Plot"]["startPointColour"], markersize=config["Plot"]["startPointSize"])
-        plt.plot(config["Input"]["endLon"], config["Input"]["endLat"], marker=config["Plot"]["endPointMarker"], color=config["Plot"]["endPointColour"], markersize=config["Plot"]["endPointSize"])
+        plt.plot(config["Input"]["startLon"], config["Input"]["startLat"], marker=config["Plot"]["startPointMarker"], color=config["Plot"]["startPointColor"], markersize=config["Plot"]["startPointSize"])
+        plt.plot(config["Input"]["endLon"], config["Input"]["endLat"], marker=config["Plot"]["endPointMarker"], color=config["Plot"]["endPointColor"], markersize=config["Plot"]["endPointSize"])
             
         # Labels and title
-        plt.xlabel("Longitude")
-        plt.ylabel("Latitude")
-        plt.title("Bathymetry Map with Path")
+        plt.xlabel("Longitude (degE)")
+        plt.ylabel("Latitude (degN)")
+        plt.title(f"Bathymetry and thalweg of {config['Input']['name']}")
         plt.legend()
         ax.set_aspect('equal', adjustable='box')
         

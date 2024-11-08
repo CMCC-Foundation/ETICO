@@ -971,22 +971,7 @@ def find_highest_bathy(ds, path_ds, path_df, config, start_lat=None, start_lon=N
                         # notify the user
                         logging.info(f"============== RISCHIO COMEBACK -- {comebackCount} -- {current} ===================")
                     
-                
-
-                
-                # if d_from_start < distance_from_start:
-                #     comebackCount += 1
-                #     logging.error(f"============== RISCHIO COMEBACK -- {comebackCount} ===================")
-                #     if comebackCount == 1:
-                #         comebackStart = distance_from_start
-                #         comebackAlert = True
-
-                # else: # controlliamo lo stesso se eravamo gia in stato di alert
-                #     if comebackAlert:
-                #         if d_from_start < distance_from_start:
-                #             comebackCount += 1
-                #             logging.error(f"============== RISCHIO COMEBACK -- {comebackCount} ===================")
-                                        
+                # update the distance from start point                                        
                 distance_from_start = d_from_start
                 
             else:
@@ -999,5 +984,4 @@ def find_highest_bathy(ds, path_ds, path_df, config, start_lat=None, start_lon=N
         logging.error(f"Error during bathy analysis: {e}")
         raise
 
-    # return restart, current_lat, current_lon, np.mean(history[-10:]), i, distance_from_start
     return restart, current_lat, current_lon, mean_angle(history[-10:]), i, distance_from_start

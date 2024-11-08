@@ -126,12 +126,14 @@ def create_path(ds, start, end):
 #
 ################################################
 
-def plot_path(ds_with_path, output_png_path):
+def plot_path(ds_with_path, output_png_path, config):
     """Plot the bathymetry with the generated path."""
     logging.info("Plotting the results...")
-    plt.figure(figsize=(8, 6))
-    ds_with_path['bathy'].plot(cmap='Blues')
-    plt.title("Generated River Path")
+    plt.figure(figsize=(8, 6), dpi=300)
+    ds_with_path['bathy'].plot(cmap="Greys", add_colorbar=False)    
+    plt.title(f"Greedy path on {config['Input']['name']}")
+    plt.xlabel("Longitude (degE)")  # Add x-axis label
+    plt.ylabel("Latitude (degN)")   # Add y-axis label
     plt.savefig(output_png_path)
     logging.info("Plotting completed.")
 
@@ -179,6 +181,6 @@ def start_a_star(config):
     path_df.to_csv(output_csv_path, index=False)
 
     # Plot the results
-    plot_path(ds_with_path, output_png_path)
+    plot_path(ds_with_path, output_png_path, config)
 
     logging.info("Process completed.")

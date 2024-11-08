@@ -83,11 +83,20 @@ def parse_config(config_file):
         
         ### Plot section
 
-        # read the colour for the thalweg
-        config['Plot']['plotColour'] = parser.get('Plot', 'plotColour')
-        if not config['Plot']['plotColour']:
+        # read the color map for the river
+        config['Plot']['riverColorMap'] = parser.get('Plot', 'riverColorMap')
+        if not config['Plot']['riverColorMap']:           
+            raise ValueError("The 'riverColorMap' entry in the 'Plot' section is empty.")      
+        
+        # read the color for the thalweg
+        config['Plot']['plotColor'] = parser.get('Plot', 'plotColor')
+        if not config['Plot']['plotColor']:           
+            raise ValueError("The 'plotColor' entry in the 'Plot' section is empty.")      
 
-            raise ValueError("The 'plotColour' entry in the 'Plot' section is empty.")      
+        # read the color for the optimized thalweg
+        config['Plot']['optiPlotColor'] = parser.get('Plot', 'optiPlotColor')
+        if not config['Plot']['optiPlotColor']:           
+            raise ValueError("The 'optiPlotColor' entry in the 'Plot' section is empty.")      
         
         # read the size of the dots to plot
         config['Plot']['dotSize'] = parser.get('Plot', 'dotSize')
@@ -97,6 +106,11 @@ def parse_config(config_file):
         # read whether or not to plot dots
         config['Plot']['plotDots'] = parser.getboolean('Plot', 'plotDots')
 
+        # read the maximum number of comebacks
+        config['Input']['maxComebacks'] = parser.getint('Input', 'maxComebacks')
+        if not config['Input']['maxComebacks']:
+            raise ValueError("The 'maxComebacks' entry in the 'Input' section is empty.")
+        
         # read the interval to plot dots
         config['Plot']['dotsInterval'] = parser.getint('Plot', 'dotsInterval')
         if not config['Plot']['dotsInterval']:
@@ -107,10 +121,10 @@ def parse_config(config_file):
         if not config['Plot']['dotsFontSize']:
             raise ValueError("The 'dotsFontSize' entry in the 'Plot' section is empty.")
 
-        # read the font colour for the dots label
-        config['Plot']['dotsFontColour'] = parser.get('Plot', 'dotsFontColour')
-        if not config['Plot']['dotsFontColour']:
-            raise ValueError("The 'dotsFontColour' entry in the 'Plot' section is empty.")
+        # read the font color for the dots label
+        config['Plot']['dotsFontColor'] = parser.get('Plot', 'dotsFontColor')
+        if not config['Plot']['dotsFontColor']:
+            raise ValueError("The 'dotsFontColor' entry in the 'Plot' section is empty.")
 
         # read the size for the start point
         config['Plot']['startPointSize'] = parser.getint('Plot', 'startPointSize')
@@ -122,10 +136,10 @@ def parse_config(config_file):
         if not config['Plot']['startPointMarker']:
             raise ValueError("The 'startPointMarker' entry in the 'Plot' section is empty.")
 
-        # read the colour for the start point
-        config['Plot']['startPointColour'] = parser.get('Plot', 'startPointColour')
-        if not config['Plot']['startPointColour']:
-            raise ValueError("The 'startPointColour' entry in the 'Plot' section is empty.")
+        # read the color for the start point
+        config['Plot']['startPointColor'] = parser.get('Plot', 'startPointColor')
+        if not config['Plot']['startPointColor']:
+            raise ValueError("The 'startPointColor' entry in the 'Plot' section is empty.")
 
         # read the size for the end point
         config['Plot']['endPointSize'] = parser.getint('Plot', 'endPointSize')
@@ -137,13 +151,18 @@ def parse_config(config_file):
         if not config['Plot']['endPointMarker']:
             raise ValueError("The 'endPointMarker' entry in the 'Plot' section is empty.")
 
-        # read the colour for the end point
-        config['Plot']['endPointColour'] = parser.get('Plot', 'endPointColour')
-        if not config['Plot']['endPointColour']:
-            raise ValueError("The 'endPointColour' entry in the 'Plot' section is empty.")      
+        # read the color for the end point
+        config['Plot']['endPointColor'] = parser.get('Plot', 'endPointColor')
+        if not config['Plot']['endPointColor']:
+            raise ValueError("The 'endPointColor' entry in the 'Plot' section is empty.")      
         
         
         ### Input section
+
+        # read the name for the input file (.grd, .nc, etc)
+        config['Input']['name'] = parser.get('Input', 'name')
+        if not config['Input']['name']:
+            raise ValueError("The 'name' entry in the 'Input' section is empty.")
         
         # read the name for the input file (.grd, .nc, etc)
         config['Input']['inputFile'] = parser.get('Input', 'inputFile')
@@ -184,7 +203,7 @@ def parse_config(config_file):
         config['Input']['initialDirection'] = parser.get('Input', 'initialDirection')
         if not config['Input']['initialDirection']:
             raise ValueError("The 'initialDirection' entry in the 'Input' section is empty.")
-
+        
         # read the maximum number of iterations
         config['Input']['maxIterations'] = parser.getint('Input', 'maxIterations')
         if not config['Input']['maxIterations']:
