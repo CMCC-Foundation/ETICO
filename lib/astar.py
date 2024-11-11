@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import logging
 import os
+import pdb
 
 
 ################################################
@@ -150,7 +151,7 @@ def start_a_star(config):
     nc_path = config['Input']['inputFile']
     start = (float(config['Input']['startLat']), float(config['Input']['startLon']))
     end = (float(config['Input']['endLat']), float(config['Input']['endLon']))
-
+    
     # read output file names
     output_nc_path = os.path.join(config["Output"]["baseFolder"], config["Output"]["simplifiedNcFile"])
     output_csv_path = os.path.join(config["Output"]["baseFolder"], config["Output"]["simplifiedCsvFile"])
@@ -161,9 +162,17 @@ def start_a_star(config):
     ds = xr.open_dataset(nc_path, engine="netcdf4")
     logging.info("NetCDF file loaded successfully.")
 
+    # select the closest points (since the given point may not correspond precisely
+    # to points in the netcdf file)
+    real_start = ds['bathy'].sel(lat=start[0], lon=start[1], method="nearest")
+    real_end = ds['bathy'].sel(lat=start[0], lon=start[1], method="nearest")
+
+    real_start = (float(real_start.lat.values), float(real_start.lon.values))
+    real_end = (float(real_end.lat.values), float(real_end.lon.values))    
+    
     # create the connected path
-    logging.info(f"Creating path from {start} to {end}...")
-    ds_with_path, path_coords = create_path(ds, start, end)
+    logging.info(f"Creating path from {start} ({real_start}) to {end} ({real_end})...")
+    ds_with_path, path_coords = create_path(ds, real_start, real_end)
 
     if not path_coords:
         logging.info("Error: No path created. Check input data or path conditions.")
