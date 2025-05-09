@@ -15,6 +15,9 @@ from scipy.spatial import KDTree
 import matplotlib.tri as mtri
 import argparse
 from collections import deque
+import matplotlib
+
+matplotlib.use('TkAgg')
 
 
 #############################################################

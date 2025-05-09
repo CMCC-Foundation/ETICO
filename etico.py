@@ -7,6 +7,7 @@
 #############################################################
 
 # global reqs
+import csv
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -295,6 +296,22 @@ if __name__ == "__main__":
         path.append(next_node)
         current = next_node
 
+
+        
+    #############################################################
+    #
+    # CSV output
+    #
+    #############################################################
+        
+    # Save thalweg to csv file
+    outfile_name = os.path.join(config_dict["Output"]["outputdirectory"], config_dict["Output"]["thalwegfile"])
+    with open(outfile_name, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Latitude', 'Longitude', 'Depth'])  # intestazione
+        
+        for lat, lon, depth in zip(lats[path], lons[path], depths[path]):
+            writer.writerow([lat, lon, depth])
         
     #############################################################
     #
