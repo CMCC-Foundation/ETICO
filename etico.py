@@ -176,7 +176,7 @@ if __name__ == "__main__":
     #
     #############################################################
 
-    start_idx = kdtree.query(start_point)[1]
+    original_start_idx = start_idx = kdtree.query(start_point)[1]
     end_idx = kdtree.query(end_point)[1]
     
     visited = set()
@@ -185,7 +185,11 @@ if __name__ == "__main__":
     last_angle = initial_angle
     angle_history = deque([initial_angle], maxlen=20)
     steps = 0
-
+    approaching_start_count = 0
+    prev_dist_to_start = haversine(lats[current], lons[current], lats[start_idx], lons[start_idx])
+    prev_dist_to_end = haversine(lats[current], lons[current], lats[end_idx], lons[end_idx])
+    reverse_start_node = None  # dove inizia la sequenza "sbagliata"
+    
     
     #############################################################
     #
@@ -196,8 +200,52 @@ if __name__ == "__main__":
     while current != end_idx and steps < max_steps:
         steps += 1
         visited.add(current)
-    
+
+
+        # Calcolo distanza da start ed end
         dist_to_end = haversine(lats[current], lons[current], lats[end_idx], lons[end_idx])
+        dist_to_start = haversine(lats[current], lons[current], lats[start_idx], lons[start_idx])
+        
+        if dist_to_start < prev_dist_to_start and dist_to_end > prev_dist_to_end:
+            approaching_start_count += 1
+            if approaching_start_count == 1:
+                reverse_start_node = current  # memorizza dove inizia il problema            
+        else:            
+            approaching_start_count = 0  # reset se il pattern si interrompe
+            reverse_start_node = None            
+        
+        if approaching_start_count >= 5:
+
+            print(f"\nWrong direction for {approaching_start_count} consecutive steps.")
+            print(f"Restarting from node {reverse_start_node}")
+            print(type(angle_history))
+            for _ in range(5):
+                angle_history.pop()
+            
+            # Riparti dal reverse_start_node
+            current = reverse_start_node
+            start_idx = reverse_start_node
+            visited = set()
+            path = path[0:-5]    
+            # path = [current]
+            # steps = 0
+            # angle_history = []
+            # last_angle = None
+            
+            # reset contatori
+            approaching_start_count = 0
+            reverse_start_node = None
+        
+            # aggiorna distanze
+            prev_dist_to_start = haversine(lats[current], lons[current], lats[start_idx], lons[start_idx])
+            prev_dist_to_end = haversine(lats[current], lons[current], lats[end_idx], lons[end_idx])
+            continue  # salta al prossimo step            
+
+        
+        # aggiorna valori precedenti per il prossimo step
+        prev_dist_to_start = dist_to_start
+        prev_dist_to_end = dist_to_end
+                
         if dist_to_end <= stop_distance_km:
             print(f"Stopped: distance from target {dist_to_end:.3f} km <= {stop_distance_km} km")
             break
@@ -214,7 +262,13 @@ if __name__ == "__main__":
             d = haversine(lats[n], lons[n], lats[end_idx], lons[end_idx])
             h = -depths[n]
             ang = angle_between(lats[current], lons[current], lats[n], lons[n])
-            penalty_last = angle_diff(last_angle, ang) / 180.0
+
+            if last_angle is not None:
+                penalty_last = angle_diff(last_angle, ang) / 180.0
+            else:
+                penalty_last = 0
+            
+            # penalty_last = angle_diff(last_angle, ang) / 180.0
             penalty_avg = angle_diff(avg_angle, ang) / 180.0 if avg_angle is not None else 0
     
             score = (
@@ -248,4 +302,4 @@ if __name__ == "__main__":
     #
     #############################################################
 
-    plot(lons, lats, elements, depths, path, start_idx, end_idx, config_dict)
+    plot(lons, lats, elements, depths, path, original_start_idx, end_idx, config_dict)
