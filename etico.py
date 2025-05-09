@@ -40,6 +40,12 @@ angles = {
 #############################################################
 
 def haversine(lat1, lon1, lat2, lon2):
+
+    """
+    Calculates the great-circle distance in kilometers between two geographic 
+    coordinates using the Haversine formula.
+    """
+    
     R = 6371
     phi1, phi2 = np.radians(lat1), np.radians(lat2)
     dphi = np.radians(lat2 - lat1)
@@ -55,6 +61,11 @@ def haversine(lat1, lon1, lat2, lon2):
 #############################################################
 
 def angle_between(lat1, lon1, lat2, lon2):
+
+    """
+    Computes the compass bearing (in degrees) from one geographic point to another.    
+    """
+    
     dy = lat2 - lat1
     dx = lon2 - lon1
     angle_rad = np.arctan2(dy, dx)
@@ -79,6 +90,12 @@ def angle_diff(a1, a2):
 #############################################################
 
 def angle_to_direction(angle):
+
+    """
+    Converts a compass angle (in degrees) into a cardinal or intercardinal 
+    direction string (e.g. "N", "NE", "E", etc.).
+    """
+    
     directions = ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE']
     idx = int(((angle + 22.5) % 360) / 45)
     return directions[idx]
@@ -91,6 +108,12 @@ def angle_to_direction(angle):
 #############################################################
 
 def get_neighbors(node, elem_map):
+
+    """
+    Calculates the great-circle distance in kilometers between two 
+    geographic coordinates using the Haversine formula.
+    """
+    
     return list(elem_map.get(node, set()))
 
 
@@ -101,7 +124,12 @@ def get_neighbors(node, elem_map):
 #############################################################
 
 def mean_angle(angles_deg):
-    """Media vettoriale di angoli in gradi"""
+    
+    """
+    Calculates the circular mean of a sequence of angles,
+    correctly handling wrap-around at 360 deg.
+    """
+    
     if not angles_deg:
         return None
     angles_rad = np.radians(angles_deg)
@@ -124,7 +152,7 @@ if __name__ == "__main__":
         
     # read config file
     config_dict = read_config_as_dict(config_file)
-    
+
     start_point = (config_dict["Algorithm"]["startlat"], config_dict["Algorithm"]["startlon"])
     end_point = (config_dict["Algorithm"]["endlat"], config_dict["Algorithm"]["endlon"])
     initial_angle = angles[config_dict["Algorithm"]["startdir"]]
@@ -134,7 +162,7 @@ if __name__ == "__main__":
     cbar_max = config_dict["Plot"]["cbarmax"]
 
     
-    # ========== Pesi dell’euristica ==========
+    # ========== Weights ==========
     distance_weight = config_dict["Algorithm"]["distanceweight"]
     depth_weight = config_dict["Algorithm"]["depthweight"]
     direction_weight = config_dict["Algorithm"]["directionweight"]
@@ -189,7 +217,7 @@ if __name__ == "__main__":
     approaching_start_count = 0
     prev_dist_to_start = haversine(lats[current], lons[current], lats[start_idx], lons[start_idx])
     prev_dist_to_end = haversine(lats[current], lons[current], lats[end_idx], lons[end_idx])
-    reverse_start_node = None  # dove inizia la sequenza "sbagliata"
+    reverse_start_node = None  # where the path starts to go far from the end point 
     
     
     #############################################################
@@ -203,16 +231,16 @@ if __name__ == "__main__":
         visited.add(current)
 
 
-        # Calcolo distanza da start ed end
+        # Calculate distance from start and end
         dist_to_end = haversine(lats[current], lons[current], lats[end_idx], lons[end_idx])
         dist_to_start = haversine(lats[current], lons[current], lats[start_idx], lons[start_idx])
         
         if dist_to_start < prev_dist_to_start and dist_to_end > prev_dist_to_end:
             approaching_start_count += 1
             if approaching_start_count == 1:
-                reverse_start_node = current  # memorizza dove inizia il problema            
+                reverse_start_node = current  # store where the problem appears
         else:            
-            approaching_start_count = 0  # reset se il pattern si interrompe
+            approaching_start_count = 0  # reset if pattern interrupts
             reverse_start_node = None            
         
         if approaching_start_count >= 5:
@@ -223,27 +251,23 @@ if __name__ == "__main__":
             for _ in range(5):
                 angle_history.pop()
             
-            # Riparti dal reverse_start_node
+            # restart from reverse_start_node
             current = reverse_start_node
             start_idx = reverse_start_node
             visited = set()
             path = path[0:-5]    
-            # path = [current]
-            # steps = 0
-            # angle_history = []
-            # last_angle = None
             
-            # reset contatori
+            # reset counters
             approaching_start_count = 0
             reverse_start_node = None
         
-            # aggiorna distanze
+            # update distances
             prev_dist_to_start = haversine(lats[current], lons[current], lats[start_idx], lons[start_idx])
             prev_dist_to_end = haversine(lats[current], lons[current], lats[end_idx], lons[end_idx])
-            continue  # salta al prossimo step            
+            continue
 
         
-        # aggiorna valori precedenti per il prossimo step
+        # update previous values for next step
         prev_dist_to_start = dist_to_start
         prev_dist_to_end = dist_to_end
                 
@@ -296,7 +320,6 @@ if __name__ == "__main__":
         path.append(next_node)
         current = next_node
 
-
         
     #############################################################
     #
@@ -308,11 +331,12 @@ if __name__ == "__main__":
     outfile_name = os.path.join(config_dict["Output"]["outputdirectory"], config_dict["Output"]["thalwegfile"])
     with open(outfile_name, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['Latitude', 'Longitude', 'Depth'])  # intestazione
+        writer.writerow(['Latitude', 'Longitude', 'Depth'])
         
         for lat, lon, depth in zip(lats[path], lons[path], depths[path]):
             writer.writerow([lat, lon, depth])
-        
+
+            
     #############################################################
     #
     # Plot
