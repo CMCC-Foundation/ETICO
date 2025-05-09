@@ -28,7 +28,7 @@ $ conda uninstall libxcb
 To invoke the script:
 
 ```
-$ python etico.py <CONFIG_FILE>
+$ python etico.py <NETCDF_FILE> <CONFIG_FILE>
 ```
 
 Please remember to check that settings in the config file are correct. See `sample_tolle.conf` for an example.

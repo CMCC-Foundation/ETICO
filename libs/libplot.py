@@ -39,9 +39,12 @@ def plot(lons, lats, elements, depths, path, start_idx, end_idx, config):
     plt.title("Thalweg and Bathymetry")
     plt.legend()
     plt.grid(True)
-    plt.show()
 
     # save the plot to png file
+    if not os.path.exists(config["Output"]["plotdirectory"]):
+        os.makedirs(config["Output"]["plotdirectory"])
     outfile_name = os.path.join(config["Output"]["plotdirectory"], "unstr_thalweg.png")
     plt.savefig(outfile_name)
-    
+
+    # show the plot
+    plt.show()
