@@ -1,147 +1,251 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
-################################################
+#############################################################
 #
-# requirements
+# Requirements
 #
-################################################
+#############################################################
 
-# global requirements
-import pandas as pd
-import logging
+# global reqs
 import sys
-import os
+import numpy as np
+import matplotlib.pyplot as plt
+from netCDF4 import Dataset
+from scipy.spatial import KDTree
+import matplotlib.tri as mtri
+import argparse
+from collections import deque
 
-# local requirements
-from lib.configParser import *
-from lib.postproc import *
-from lib.explorer import *
-from lib.astar import *
-from lib.plot import *
+# local reqs
+from libs.libconfig import *
+from libs.libplot import *
 
 
-################################################
+#############################################################
 #
-# logging configuration
+# Global variables
 #
-################################################
+#############################################################
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+angles = {
+    "E":0, "NE":45, "N":90, "NW":135, "W":180, "SW":225, "S":270, "SE": 315    
+}
 
 
-################################################
+#############################################################
 #
-# Main
+# Haversine Function
 #
-################################################
+#############################################################
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371
+    phi1, phi2 = np.radians(lat1), np.radians(lat2)
+    dphi = np.radians(lat2 - lat1)
+    dlambda = np.radians(lon2 - lon1)
+    a = np.sin(dphi / 2.0)**2 + np.cos(phi1) * np.cos(phi2) * np.sin(dlambda / 2.0)**2
+    return R * 2 * np.arcsin(np.sqrt(a))
+
+
+#############################################################
+#
+# "Angle Between" Function
+#
+#############################################################
+
+def angle_between(lat1, lon1, lat2, lon2):
+    dy = lat2 - lat1
+    dx = lon2 - lon1
+    angle_rad = np.arctan2(dy, dx)
+    angle_deg = np.degrees(angle_rad)
+    return (angle_deg + 360) % 360
+
+
+#############################################################
+#
+# "Angle Diff" Function
+#
+#############################################################
+
+def angle_diff(a1, a2):
+    return min(abs(a1 - a2), 360 - abs(a1 - a2))
+
+
+#############################################################
+#
+# "Angle To Direction" Function
+#
+#############################################################
+
+def angle_to_direction(angle):
+    directions = ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE']
+    idx = int(((angle + 22.5) % 360) / 45)
+    return directions[idx]
+
+
+#############################################################
+#
+# "Get Neighbors" Function
+#
+#############################################################
+
+def get_neighbors(node, elem_map):
+    return list(elem_map.get(node, set()))
+
+
+#############################################################
+#
+# "Mean Angle" Function
+#
+#############################################################
+
+def mean_angle(angles_deg):
+    """Media vettoriale di angoli in gradi"""
+    if not angles_deg:
+        return None
+    angles_rad = np.radians(angles_deg)
+    x = np.mean(np.cos(angles_rad))
+    y = np.mean(np.sin(angles_rad))
+    return (np.degrees(np.arctan2(y, x)) + 360) % 360
+
+
+#############################################################
+#
+# MAIN
+#
+#############################################################
 
 if __name__ == "__main__":
-    
-    ################################################
-    #
-    # input parameters
-    #
-    ################################################
-    
-    if len(sys.argv) < 2:
-        logging.error("No configuration file specified. Please provide the path to the configuration file.")
-        sys.exit(1)
 
-    config_file = sys.argv[1]
-    logging.info(f"Reading configuration file: {config_file}")
-    
-    try:
-        config = parse_config(config_file)
-        logging.info("Configuration file parsed successfully.")
-    except Exception as e:
-        logging.error(f"Error while parsing the configuration file: {e}")
-        sys.exit(1)
-
-
-    ################################################
-    #
-    # create output folder
-    #
-    ################################################
+    # read input params
+    nc_file = sys.argv[1]
+    config_file = sys.argv[2]
         
-    # create the baseFolder if it does not exist
-    base_folder = config['Output']['baseFolder']
-    if not os.path.exists(base_folder):
-        os.makedirs(base_folder)
-        logging.info(f"Created base folder: {base_folder}")
-    else:
-        logging.info(f"Base folder already exists: {base_folder}")
+    # read config file
+    config_dict = read_config_as_dict(config_file)
+    
+    start_point = (config_dict["Algorithm"]["startlat"], config_dict["Algorithm"]["startlon"])
+    end_point = (config_dict["Algorithm"]["endlat"], config_dict["Algorithm"]["endlon"])
+    initial_angle = angles[config_dict["Algorithm"]["startdir"]]
+    max_steps = config_dict["Algorithm"]["maxsteps"]
+    stop_distance_km = config_dict["Algorithm"]["stopdistance"]                                
+    cbar_min = config_dict["Plot"]["cbarmin"]
+    cbar_max = config_dict["Plot"]["cbarmax"]
+
+    
+    # ========== Pesi dell’euristica ==========
+    distance_weight = config_dict["Algorithm"]["distanceweight"]
+    depth_weight = config_dict["Algorithm"]["depthweight"]
+    direction_weight = config_dict["Algorithm"]["directionweight"]
+    history_direction_weight = config_dict["Algorithm"]["historydirectionweight"]
 
 
-    ################################################
+    #############################################################
     #
-    # run the greedy algorithm (needed for H function)
+    # Load Data
     #
-    ################################################
+    #############################################################
+    
+    ds = Dataset(nc_file)
+    lats = ds.variables['latitude'][:]
+    lons = ds.variables['longitude'][:]
+    depths = ds.variables['total_depth'][:]
+    elements = ds.variables['element_index'][:, :] - 1 
+    
+    coords = np.column_stack((lats, lons))
+    kdtree = KDTree(coords)
 
-    start_a_star(config)
-        
-        
-    ################################################
+    
+    #############################################################
     #
-    # run the algorithm
+    # Adjacency map 
     #
-    ################################################
+    #############################################################
+    
+    node_neighbors = {}
+    for tri in elements:
+        for i in range(3):
+            n1, n2 = tri[i], tri[(i + 1) % 3]
+            node_neighbors.setdefault(n1, set()).add(n2)
+            node_neighbors.setdefault(n2, set()).add(n1)
+    
 
-    ds = load_netcdf(config['Input']['inputFile'])
-    path_ds = load_netcdf(os.path.join(config['Output']['baseFolder'], config['Output']['simplifiedNcFile']))
-    path_df = pd.read_csv(os.path.join(config['Output']['baseFolder'], config['Output']['simplifiedCsvFile']))
+    #############################################################
+    #
+    # Initialization
+    #
+    #############################################################
 
-    # intialise restart flag and counter
-    restart_points = []
-    restart = True
-    rest_cnt = 0
+    start_idx = kdtree.query(start_point)[1]
+    end_idx = kdtree.query(end_point)[1]
+    
+    visited = set()
+    path = [start_idx]
+    current = start_idx
+    last_angle = initial_angle
+    angle_history = deque([initial_angle], maxlen=20)
+    steps = 0
 
-    # loop
-    while restart:
+    
+    #############################################################
+    #
+    # Algorithm
+    #
+    #############################################################
 
-        # invoke the algorithm
-        if rest_cnt == 0:
-            restart, current_lat, current_lon, lastDirection, iteration, distance_start = find_highest_bathy(ds, path_ds, path_df, config)
-        else:
-            if restart == True:
-                logging.info(colored(f"=== RESTART AT {iteration}, #{rest_cnt} ===", "red", attrs=["bold"]))
-                logging.info(colored(f"=== RESTARTING AT {current_lat}, {current_lon} IN DIRECTION {lastDirection} ===", "red", attrs=["bold"]))                
-                restart, current_lat, current_lon, lastDirection, iteration, distance_start = find_highest_bathy(ds, path_ds, path_df, config, current_lat, current_lon, lastDirection, iteration, distance_start)
-                restart_points.append(iteration)
-            
-        rest_cnt += 1
-
-        # stop after 3 iterations
-        if rest_cnt == config['Input']['maxComebacks']:
+    while current != end_idx and steps < max_steps:
+        steps += 1
+        visited.add(current)
+    
+        dist_to_end = haversine(lats[current], lons[current], lats[end_idx], lons[end_idx])
+        if dist_to_end <= stop_distance_km:
+            print(f"Stopped: distance from target {dist_to_end:.3f} km <= {stop_distance_km} km")
             break
+    
+        neighbors = get_neighbors(current, node_neighbors)
+        best_score = float('inf')
+        next_node = None
+        best_angle = None
+        avg_angle = mean_angle(angle_history)
+    
+        for n in neighbors:
+            if n in visited:
+                continue
+            d = haversine(lats[n], lons[n], lats[end_idx], lons[end_idx])
+            h = -depths[n]
+            ang = angle_between(lats[current], lons[current], lats[n], lons[n])
+            penalty_last = angle_diff(last_angle, ang) / 180.0
+            penalty_avg = angle_diff(avg_angle, ang) / 180.0 if avg_angle is not None else 0
+    
+            score = (
+                distance_weight * d +
+                depth_weight * h +
+                direction_weight * penalty_last +
+                history_direction_weight * penalty_avg
+            )
+    
+            if score < best_score:
+                best_score = score
+                next_node = n
+                best_angle = ang
+    
+        if next_node is None:
+            print("Path stopped. No valid neighbor.")
+            break
+    
+        direction = angle_to_direction(best_angle)
+        print(f"Step {steps:3d}: from {current} to {next_node}, angle {best_angle:.1f}° ({direction}), distance from target {dist_to_end:.3f} km")
+    
+        last_angle = best_angle
+        angle_history.append(best_angle)
+        path.append(next_node)
+        current = next_node
 
         
-    ################################################
+    #############################################################
     #
-    # run the postprocessing
+    # Plot
     #
-    ################################################
+    #############################################################
 
-    postproc(config)
-
-    
-    ################################################
-    #
-    # plot data
-    #
-    ################################################
-
-    plot_bathy_with_path(config)
-
-
-    # todo LIST
-    # - post processing procedure to identify and remove loops
-    # - implement a restart algorithm, to restart the algo from the last point if the
-    #   end point was not reached
-    # - add a friendly name for the "Experiment" so that it can be used for names of files and dirs
-    # - change the format of logs
-    # - plot the riverbed profile
-    # - check the scoring functions
-    # - make the scoring functions plug and play
+    plot(lons, lats, elements, depths, path, start_idx, end_idx, config_dict)
