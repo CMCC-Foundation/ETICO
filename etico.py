@@ -35,6 +35,31 @@ angles = {
 
 #############################################################
 #
+# "Get Neighbors" Function
+#
+#############################################################
+
+def get_n_level_neighbors(start_node, node_neighbors, n):
+    visited = set()
+    level_nodes = set()
+    queue = deque()
+    queue.append((start_node, 0))
+    visited.add(start_node)
+
+    while queue:
+        current_node, level = queue.popleft()
+        if 0 < level <= n:
+            level_nodes.add(current_node)
+        if level < n:
+            for neighbor in node_neighbors.get(current_node, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append((neighbor, level + 1))
+    return level_nodes
+
+
+#############################################################
+#
 # Optimisation Function
 #
 #############################################################
@@ -122,22 +147,6 @@ def angle_to_direction(angle):
     directions = ['E', 'NE', 'N', 'NW', 'W', 'SW', 'S', 'SE']
     idx = int(((angle + 22.5) % 360) / 45)
     return directions[idx]
-
-
-#############################################################
-#
-# "Get Neighbors" Function
-#
-#############################################################
-
-def get_neighbors(node, elem_map):
-
-    """
-    Calculates the great-circle distance in kilometers between two 
-    geographic coordinates using the Haversine formula.
-    """
-    
-    return list(elem_map.get(node, set()))
 
 
 #############################################################
@@ -298,7 +307,11 @@ if __name__ == "__main__":
             print(f"Stopped: distance from target {dist_to_end:.3f} km <= {stop_distance_km} km")
             break
     
-        neighbors = get_neighbors(current, node_neighbors)
+        # neighbors = get_neighbors(current, node_neighbors)
+
+
+        neighbors = get_n_level_neighbors(current, node_neighbors, config_dict["Algorithm"]["radius"])
+        
         best_score = float('inf')
         next_node = None
         best_angle = None
@@ -349,8 +362,11 @@ if __name__ == "__main__":
     # refine path
     #
     #############################################################
-   
-    refined_path = refine_path_by_depth(path, depths, node_neighbors)        
+
+    refined_path = path
+    for i in range(config_dict["Algorithm"]["optimisationsteps"]):
+        refined_path_new = refine_path_by_depth(refined_path, depths, node_neighbors)
+        refined_path = refined_path_new
 
     
     #############################################################
