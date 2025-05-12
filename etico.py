@@ -35,6 +35,29 @@ angles = {
 
 #############################################################
 #
+# Optimisation Function
+#
+#############################################################
+
+def refine_path_by_depth(path, depths, node_neighbors):
+    new_path = path.copy()
+    for i in range(1, len(path)-1):  # ignora il primo e ultimo punto
+        current = path[i]
+        neighbors = node_neighbors.get(current, [])
+
+        # Trova il vicino con profondità maggiore del punto corrente
+        best = current
+        for n in neighbors:
+            if depths[n] > depths[best]:
+                best = n
+
+        if best != current:
+            new_path[i] = best
+    return new_path
+
+
+#############################################################
+#
 # Haversine Function
 #
 #############################################################
@@ -323,6 +346,15 @@ if __name__ == "__main__":
         
     #############################################################
     #
+    # refine path
+    #
+    #############################################################
+   
+    refined_path = refine_path_by_depth(path, depths, node_neighbors)        
+
+    
+    #############################################################
+    #
     # CSV output
     #
     #############################################################
@@ -335,7 +367,7 @@ if __name__ == "__main__":
         
         for lat, lon, depth in zip(lats[path], lons[path], depths[path]):
             writer.writerow([lat, lon, depth])
-
+            
             
     #############################################################
     #
@@ -343,4 +375,4 @@ if __name__ == "__main__":
     #
     #############################################################
 
-    plot(lons, lats, elements, depths, path, original_start_idx, end_idx, config_dict)
+    plot(lons, lats, elements, depths, path, refined_path, original_start_idx, end_idx, config_dict)

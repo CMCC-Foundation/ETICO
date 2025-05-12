@@ -26,7 +26,7 @@ matplotlib.use('TkAgg')
 #
 #############################################################
 
-def plot(lons, lats, elements, depths, path, start_idx, end_idx, config):
+def plot(lons, lats, elements, depths, path, refined_path, start_idx, end_idx, config):
 
     """Plot function to show the thalweg over the bathymetry map"""
     
@@ -35,6 +35,7 @@ def plot(lons, lats, elements, depths, path, start_idx, end_idx, config):
     tpc = plt.tripcolor(triang, depths, cmap=config["Plot"]["colormap"], vmin=config["Plot"]["cbarmin"], vmax=config["Plot"]["cbarmax"], edgecolors='k', linewidth=0)  
     plt.colorbar(tpc, label='Total Depth (m)')
     plt.plot(lons[path], lats[path], 'r-', linewidth=1, label='Thalweg')
+    plt.plot(lons[refined_path], lats[refined_path], 'b-', linewidth=1, label='Optimised Thalweg')    
     plt.plot(lons[start_idx], lats[start_idx], 'go', label='Start')
     plt.plot(lons[end_idx], lats[end_idx], 'bo', label='End')
     plt.xlabel("Longitude")
