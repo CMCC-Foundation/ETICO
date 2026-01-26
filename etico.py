@@ -364,10 +364,22 @@ if __name__ == "__main__":
     #############################################################
 
     refined_path = path
+    counter = 0
     for i in range(config_dict["Algorithm"]["optimisationsteps"]):
+        counter += 1
         refined_path_new = refine_path_by_depth(refined_path, depths, node_neighbors)
         refined_path = refined_path_new
 
+        # Save thalweg to csv file
+        outfile_name = os.path.join(config_dict["Output"]["outputdirectory"], "%s.%s" % (config_dict["Output"]["thalwegfile"], str(counter)))
+        with open(outfile_name, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Latitude', 'Longitude', 'Depth'])
+        
+            for lat, lon, depth in zip(lats[refined_path], lons[refined_path], depths[refined_path]):
+                writer.writerow([lat, lon, depth])
+      
+        
     
     #############################################################
     #
@@ -391,4 +403,4 @@ if __name__ == "__main__":
     #
     #############################################################
 
-    plot(lons, lats, elements, depths, path, refined_path, original_start_idx, end_idx, config_dict)
+    # plot(lons, lats, elements, depths, path, refined_path, original_start_idx, end_idx, config_dict)
