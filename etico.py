@@ -403,4 +403,4 @@ if __name__ == "__main__":
     #
     #############################################################
 
-    # plot(lons, lats, elements, depths, path, refined_path, original_start_idx, end_idx, config_dict)
+    plot(lons, lats, elements, depths, path, refined_path, original_start_idx, end_idx, config_dict)
