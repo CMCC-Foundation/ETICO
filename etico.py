@@ -189,6 +189,7 @@ if __name__ == "__main__":
     end_point = (config_dict["Algorithm"]["endlat"], config_dict["Algorithm"]["endlon"])
     initial_angle = angles[config_dict["Algorithm"]["startdir"]]
     max_steps = config_dict["Algorithm"]["maxsteps"]
+    backtrack_limit = config_dict["Algorithm"]["backtracksteps"]
     stop_distance_km = config_dict["Algorithm"]["stopdistance"]                                
     cbar_min = config_dict["Plot"]["cbarmin"]
     cbar_max = config_dict["Plot"]["cbarmax"]
@@ -275,7 +276,7 @@ if __name__ == "__main__":
             approaching_start_count = 0  # reset if pattern interrupts
             reverse_start_node = None            
         
-        if approaching_start_count >= 5:
+        if approaching_start_count >= backtrack_limit:
 
             print(f"\nWrong direction for {approaching_start_count} consecutive steps.")
             print(f"Restarting from node {reverse_start_node}")
