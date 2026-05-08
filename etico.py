@@ -19,6 +19,7 @@ from collections import deque
 
 # local reqs
 from libs.libconfig import *
+from libs.libgreedy import *
 from libs.libplot import *
 
 
@@ -79,27 +80,6 @@ def refine_path_by_depth(path, depths, node_neighbors):
         if best != current:
             new_path[i] = best
     return new_path
-
-
-#############################################################
-#
-# Haversine Function
-#
-#############################################################
-
-def haversine(lat1, lon1, lat2, lon2):
-
-    """
-    Calculates the great-circle distance in kilometers between two geographic 
-    coordinates using the Haversine formula.
-    """
-    
-    R = 6371
-    phi1, phi2 = np.radians(lat1), np.radians(lat2)
-    dphi = np.radians(lat2 - lat1)
-    dlambda = np.radians(lon2 - lon1)
-    a = np.sin(dphi / 2.0)**2 + np.cos(phi1) * np.cos(phi2) * np.sin(dlambda / 2.0)**2
-    return R * 2 * np.arcsin(np.sqrt(a))
 
 
 #############################################################
@@ -265,7 +245,13 @@ if __name__ == "__main__":
 
 
         # Calculate distance from start and end
-        dist_to_end = haversine(lats[current], lons[current], lats[end_idx], lons[end_idx])
+        dist_to_end = greedy_distance_to_end(
+            current,
+            end_idx,
+            node_neighbors,
+            lats,
+            lons
+        )
         dist_to_start = haversine(lats[current], lons[current], lats[start_idx], lons[start_idx])
         
         if dist_to_start < prev_dist_to_start and dist_to_end > prev_dist_to_end:
@@ -404,4 +390,4 @@ if __name__ == "__main__":
     #
     #############################################################
 
-    plot(lons, lats, elements, depths, path, refined_path, original_start_idx, end_idx, config_dict)
+    # plot(lons, lats, elements, depths, path, refined_path, original_start_idx, end_idx, config_dict)
