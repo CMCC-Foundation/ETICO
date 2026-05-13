@@ -98,6 +98,15 @@ def angle_between(lat1, lon1, lat2, lon2):
     dx = lon2 - lon1
     angle_rad = np.arctan2(dy, dx)
     angle_deg = np.degrees(angle_rad)
+
+    mean_lat_rad = np.radians((lat1 + lat2) / 2.0)
+
+    dy = lat2 - lat1
+    dx = (lon2 - lon1) * np.cos(mean_lat_rad)
+
+    angle_rad = np.arctan2(dy, dx)
+    angle_deg = np.degrees(angle_rad)
+    
     return (angle_deg + 360) % 360
 
 
@@ -298,6 +307,8 @@ if __name__ == "__main__":
 
 
         neighbors = get_n_level_neighbors(current, node_neighbors, config_dict["Algorithm"]["radius"])
+
+        print(f"============== Neighborhood size: {len(neighbors)} nodes")
         
         best_score = float('inf')
         next_node = None
